@@ -1,0 +1,482 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package aplicacion;
+
+import clases.CharacterLimiter;
+import com.toedter.calendar.JTextFieldDateEditor;
+import java.awt.Component;
+import javax.swing.table.DefaultTableModel;
+import servicios.ConnectionDB;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import servicios.ConnectionDB.Status;
+
+/**
+ *
+ * @author Roger Lovera
+ */
+public class VentanaPeriodos extends javax.swing.JInternalFrame {
+    private final ConnectionDB conn;
+    private int periodo_id = -1;
+    private final SimpleDateFormat sdf;
+
+    /**
+     * Creates new form Periodos
+     * @param conn
+     */
+    public VentanaPeriodos(ConnectionDB conn) {        
+        initComponents();
+        this.conn = conn;
+        txtPeriodo.setDocument(new CharacterLimiter(txtPeriodo, 9));
+        
+        sdf =  new SimpleDateFormat("dd/MM/yyyy");
+        for (Component component : dateFechaInicial.getComponents()) {
+            System.out.println(component.toString());
+            if(component instanceof JTextFieldDateEditor){
+                ((JTextFieldDateEditor)component).setEditable(false);
+                ((JTextFieldDateEditor)component).setOpaque(true);
+            }
+        }
+        
+        for (Component component : dateFechaFinal.getComponents()) {
+            System.out.println(component.toString());
+            if(component instanceof JTextFieldDateEditor){
+                ((JTextFieldDateEditor)component).setEditable(false);
+                ((JTextFieldDateEditor)component).setOpaque(true);
+            }
+        }
+        
+        fillTablaPeriodos();
+        setEnabledFields(false);        
+    }
+    
+    //Setters
+    //Getters
+    //Actions    
+    private void fillTablaPeriodos(){
+        String[] header = {"id","Periodo","Fecha inicial","Fecha final","Vigente"};
+        Object[] fila;
+        int[] widths = {0,-1,100,100,100};
+        DefaultTableModel model;
+        ResultSet rs;
+        SimpleDateFormat sfd = new  SimpleDateFormat("dd/MM/yyyy");
+        model = new DefaultTableModel(header,0){
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+            
+        };
+        
+        tblPeriodos.setModel(model);
+        
+        for(var i = 0; i < widths.length; i++){
+            if(widths[i] >= 0){                
+                tblPeriodos.getColumnModel().getColumn(i).setMaxWidth(widths[i]);        
+                tblPeriodos.getColumnModel().getColumn(i).setMinWidth(widths[i]);
+                tblPeriodos.getTableHeader().getColumnModel().getColumn(i).setMaxWidth(widths[i]);
+                tblPeriodos.getTableHeader().getColumnModel().getColumn(i).setMinWidth(widths[i]);
+            }
+        }
+        
+        rs = conn.executeStoredProcedureWithResultSet("select_periodos");
+                
+        try {
+            while (rs.next()) {
+                fila = new Object[] {
+                    rs.getInt(1),                  //id
+                    rs.getString(2),               //periodo
+                    sfd.format(rs.getDate(3)),     //fecha_inicial
+                    sfd.format(rs.getDate(4)),     //fecha_final
+                    rs.getBoolean(5) ? "Si":"No"   //vigente
+                };
+                model.addRow(fila);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(VentanaPeriodos.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        this.periodo_id = -1;
+    }
+    
+    private Status insertPeriodo(String periodo, String fechaInicial, String fechaFinal){
+        return conn.executeStoredProcedure("insert_periodo", periodo, fechaInicial ,fechaFinal);
+    }
+    
+    private Status updatePeriodo(int id, String periodo, String fechaInicial, String fechaFinal){
+        return conn.executeStoredProcedure("update_periodo", id, periodo, fechaInicial ,fechaFinal);
+    }
+    
+    private void setEnabledFields(boolean enabled){        
+        txtPeriodo.setText("");
+        txtPeriodo.setEnabled(enabled);
+        txtPeriodo.setOpaque(!enabled);        
+        /*
+        txtFechaInicial.setText("");
+        txtFechaInicial.setEnabled(enabled);
+        txtFechaInicial.setOpaque(!enabled);
+        txtFechaFinal.setText("");
+        txtFechaFinal.setEnabled(enabled);
+        txtFechaFinal.setOpaque(!enabled);*/
+        //dateFechaInicial.cleanup();
+        if(!enabled){
+            dateFechaInicial.setDate(null);
+            dateFechaFinal.setDate(null);            
+        }
+        dateFechaInicial.setEnabled(enabled);
+        dateFechaInicial.setOpaque(enabled);                  
+        dateFechaFinal.setEnabled(enabled);
+        dateFechaFinal.setOpaque(enabled);
+        btnNuevo.setEnabled(!enabled);
+        btnNuevo.setOpaque(enabled);        
+        btnGuardar.setEnabled(enabled);
+        btnGuardar.setOpaque(!enabled);
+        btnCancelar.setEnabled(enabled);
+        btnCancelar.setOpaque(!enabled);        
+    }
+    
+    private void addPeriodo(){
+        //SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        String periodo = this.txtPeriodo.getText().trim();
+        String fechaInicial = sdf.format(this.dateFechaInicial.getDate());
+        String fechaFinal = sdf.format(this.dateFechaFinal.getDate());
+        Status status;
+        
+        if(periodo.isEmpty() || fechaInicial.isEmpty() || fechaFinal.isEmpty()){
+            JOptionPane.showInternalMessageDialog(
+                    this.panelDatos, 
+                    "Debe llenar todos los campos", 
+                    "Nuevo periodo", 
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }else{        
+            status = this.insertPeriodo(periodo, fechaInicial, fechaFinal);
+            
+            switch(status){
+                case OK:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "Periodo registrado exitósamente",
+                            "Nuevo periodo",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    fillTablaPeriodos();
+                    setEnabledFields(false);
+                    break;
+                case ERROR:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "Ocurrió un error al registrar los datos\nPeriodo: " + periodo,
+                            "Nuevo periodo",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    break;
+                case EXIST:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "Este periodo ya se encuentra registrado previamente\nPeriodo: " + periodo,
+                            "Nuevo periodo",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    break;
+            }
+        }
+    }
+    
+    private void modifyPeriodo(){
+        int id = periodo_id;
+        //SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        String periodo = this.txtPeriodo.getText().trim();
+        String fechaInicial = sdf.format(this.dateFechaInicial.getDate());
+        String fechaFinal = sdf.format(this.dateFechaFinal.getDate());
+        Status status;
+        
+        if(periodo.isEmpty() || fechaInicial.isEmpty() || fechaFinal.isEmpty()){
+            JOptionPane.showInternalMessageDialog(
+                    this.panelDatos, 
+                    "Debe llenar todos los campos", 
+                    "Nuevo periodo", 
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }else{        
+            status = updatePeriodo(id, periodo, fechaInicial, fechaFinal);
+            
+            switch(status){
+                case OK:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "Periodo a sido actualizado exitósamente",
+                            "Nuevo periodo",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                    fillTablaPeriodos();
+                    setEnabledFields(false);
+                    break;
+                case ERROR:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "Ocurrió un error al actualizar los datos\nPeriodo: " + periodo,
+                            "Nuevo periodo",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    break;
+                case EXIST:
+                    JOptionPane.showInternalMessageDialog(
+                            this.panelDatos,
+                            "No puede haber dos períodos con la misma denominación\nPeriodo: " + periodo,
+                            "Nuevo periodo",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                    break;
+            }
+        }
+    }
+       
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        panelDatos = new javax.swing.JPanel();
+        lblPeriodo = new javax.swing.JLabel();
+        lblFechaInicial = new javax.swing.JLabel();
+        lblFechaFinal = new javax.swing.JLabel();
+        txtPeriodo = new javax.swing.JTextField();
+        btnNuevo = new javax.swing.JButton();
+        btnGuardar = new javax.swing.JButton();
+        btnCancelar = new javax.swing.JButton();
+        dateFechaInicial = new com.toedter.calendar.JDateChooser();
+        dateFechaFinal = new com.toedter.calendar.JDateChooser();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        tblPeriodos = new javax.swing.JTable();
+        btnCerrar = new javax.swing.JButton();
+
+        setTitle("Periodos");
+
+        panelDatos.setBorder(javax.swing.BorderFactory.createTitledBorder("Datos"));
+
+        lblPeriodo.setText("Periodo");
+
+        lblFechaInicial.setText("Fecha inicial");
+
+        lblFechaFinal.setText("Fecha final");
+
+        txtPeriodo.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtPeriodoKeyTyped(evt);
+            }
+        });
+
+        btnNuevo.setText("Nuevo");
+        btnNuevo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnNuevoActionPerformed(evt);
+            }
+        });
+
+        btnGuardar.setText("Guardar");
+        btnGuardar.setEnabled(false);
+        btnGuardar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnGuardarActionPerformed(evt);
+            }
+        });
+
+        btnCancelar.setText("Cancelar");
+        btnCancelar.setEnabled(false);
+        btnCancelar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCancelarActionPerformed(evt);
+            }
+        });
+
+        dateFechaInicial.setDateFormatString("dd/MM/yyyy");
+
+        dateFechaFinal.setDateFormatString("dd/MM/yyyy");
+
+        javax.swing.GroupLayout panelDatosLayout = new javax.swing.GroupLayout(panelDatos);
+        panelDatos.setLayout(panelDatosLayout);
+        panelDatosLayout.setHorizontalGroup(
+            panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelDatosLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelDatosLayout.createSequentialGroup()
+                        .addComponent(lblPeriodo)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(lblFechaInicial)
+                        .addGap(3, 3, 3)
+                        .addComponent(dateFechaInicial, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(lblFechaFinal)
+                        .addGap(3, 3, 3)
+                        .addComponent(dateFechaFinal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(panelDatosLayout.createSequentialGroup()
+                        .addComponent(btnNuevo, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnGuardar, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnCancelar, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        panelDatosLayout.setVerticalGroup(
+            panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panelDatosLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(lblPeriodo)
+                        .addComponent(txtPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(lblFechaInicial)
+                        .addComponent(lblFechaFinal))
+                    .addComponent(dateFechaInicial, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(dateFechaFinal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(panelDatosLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnGuardar)
+                    .addComponent(btnCancelar)
+                    .addComponent(btnNuevo))
+                .addContainerGap(12, Short.MAX_VALUE))
+        );
+
+        tblPeriodos.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "Title 1", "Title 2", "Title 3", "Title 4"
+            }
+        ));
+        tblPeriodos.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblPeriodosMouseClicked(evt);
+            }
+        });
+        jScrollPane1.setViewportView(tblPeriodos);
+
+        btnCerrar.setText("Cerrar");
+        btnCerrar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCerrarActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnCerrar, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addComponent(panelDatos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1))
+                .addContainerGap())
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(panelDatos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btnCerrar)
+                .addGap(12, 12, 12))
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        if(periodo_id == -1){
+            addPeriodo();
+        }else{
+            modifyPeriodo();
+        }
+    }//GEN-LAST:event_btnGuardarActionPerformed
+
+    private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
+        this.dispose();
+    }//GEN-LAST:event_btnCerrarActionPerformed
+
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
+        setEnabledFields(true);
+        periodo_id = -1;
+    }//GEN-LAST:event_btnNuevoActionPerformed
+
+    private void tblPeriodosMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblPeriodosMouseClicked
+        int selectedRow = tblPeriodos.getSelectedRow();
+        if(evt.getClickCount() == 2){
+            if(selectedRow > -1){
+                setEnabledFields(true);
+                periodo_id = (int) tblPeriodos.getModel().getValueAt(selectedRow, 0);
+                txtPeriodo.setText(tblPeriodos.getModel().getValueAt(selectedRow, 1).toString());
+                try {
+                    dateFechaInicial.setDate(sdf.parse(tblPeriodos.getModel().getValueAt(selectedRow, 2).toString()));
+                    dateFechaFinal.setDate(sdf.parse(tblPeriodos.getModel().getValueAt(selectedRow, 3).toString()));
+                } catch (ParseException ex) {
+                    dateFechaInicial.setDate(null);
+                    dateFechaFinal.setDate(null);
+                    Logger.getLogger(VentanaPeriodos.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                /*
+                txtFechaInicial.setText(tblPeriodos.getModel().getValueAt(selectedRow, 2).toString());
+                txtFechaFinal.setText(tblPeriodos.getModel().getValueAt(selectedRow, 3).toString());
+                */                
+            }
+        }
+    }//GEN-LAST:event_tblPeriodosMouseClicked
+
+    private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
+        // TODO add your handling code here:
+        setEnabledFields(false);
+        periodo_id = -1;
+    }//GEN-LAST:event_btnCancelarActionPerformed
+
+    private void txtPeriodoKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtPeriodoKeyTyped
+        if(evt.getKeyChar() == ' '){
+            evt.consume();
+        }
+    }//GEN-LAST:event_txtPeriodoKeyTyped
+
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnCancelar;
+    private javax.swing.JButton btnCerrar;
+    private javax.swing.JButton btnGuardar;
+    private javax.swing.JButton btnNuevo;
+    private com.toedter.calendar.JDateChooser dateFechaFinal;
+    private com.toedter.calendar.JDateChooser dateFechaInicial;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblFechaFinal;
+    private javax.swing.JLabel lblFechaInicial;
+    private javax.swing.JLabel lblPeriodo;
+    private javax.swing.JPanel panelDatos;
+    private javax.swing.JTable tblPeriodos;
+    private javax.swing.JTextField txtPeriodo;
+    // End of variables declaration//GEN-END:variables
+}
