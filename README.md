@@ -1,6 +1,6 @@
 # Sistema de Control de Estudio del Colegio Universitario de Rehabilitación May Hamilton
 
-Software en desarrollo. para la institución educativa **Colegio Universitario de Rehabilitación May Hamilton** de Caracas, Venezuela.
+Software en desarrollo para la institución educativa **Colegio Universitario de Rehabilitación May Hamilton** de Caracas, Venezuela.
 
 Se trata de una aplicación de escritorio diseñado para automatizar funciones inherentes al departamento de Control de Estudio de la Institución. Es una aplicación cliente/servidor multiplataforma. 
 
