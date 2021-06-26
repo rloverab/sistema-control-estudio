@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.vitadev</groupId>
     <artifactId>sce</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
     <packaging>jar</packaging>
     <repositories>
         <repository>
@@ -35,4 +35,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
+    <name>Sistema de Control de Estudio</name>
+    <description>Sistema de Control de Estudios del Colegio Universitario de Rehabilitación May Hamilton
+Caracas - Venezuela</description>
 </project>
