@@ -124,8 +124,11 @@ public final class ConnectionDB {
                     case "java.lang.Boolean":
                         cst.setBoolean(i+1, (boolean) params[i]);                        
                         break;                        
-                    case "java.sql.Date":
-                        cst.setDate(i+1, (Date) params[i]);                        
+                    case "java.sql.Date":                    
+                        cst.setDate(i+1, (Date) params[i]);
+                        break;
+                    case "java.util.Date":
+                        cst.setDate(i+1, new Date(((java.util.Date) params[i]).getTime()));
                 }
             }            
             

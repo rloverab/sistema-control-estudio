@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2021 Roger Lovera <roger.lovera>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package aplicacion;
 
@@ -9,6 +20,8 @@ import clases.Estudiante;
 import clases.Formatter;
 import clases.Persona;
 import clases.TextFieldToToolTip;
+import com.toedter.calendar.JTextFieldDateEditor;
+import java.awt.Component;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.ResultSet;
@@ -30,7 +43,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     private final ConnectionDB conn;
     private final ArrayList<Estudiante> estudiantes;
     private Persona persona;
-    private Accion accion;        
+    private Accion accion;       
+    
     
     private enum Accion {
         ACTUALIZAR,
@@ -61,6 +75,14 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         txtLugarNacimiento.getDocument().addDocumentListener(new TextFieldToToolTip(txtLugarNacimiento));
         txtTelefonoLocal.setFormatterFactory(new Formatter("(####)-###.##.##", '_'));
         txtTelefonoMovil.setFormatterFactory(new Formatter("(####)-###.##.##", '_'));
+        dateFechaNacimiento.setDateFormatString("dd/MM/yyy");
+        for (Component component : dateFechaNacimiento.getComponents()) {
+            System.out.println(component.toString());
+            if(component instanceof JTextFieldDateEditor){
+                ((JTextFieldDateEditor)component).setEditable(false);
+                ((JTextFieldDateEditor)component).setOpaque(true);
+            }
+        }
         
         if (this.conn != null) {
             fillComboBoxSexo();
@@ -218,7 +240,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         switch(accion){
             case ACTUALIZAR:
             case MOSTRAR:                
-                rs = conn.executeStoredProcedureWithResultSet("select_estudiantes_documentos", estudiante_id);
+                rs = conn.executeStoredProcedureWithResultSet("select_estudiante_documentos", estudiante_id);
                 
                 if (rs != null) {
                     try {
@@ -264,7 +286,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         txtNombre2.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
         txtApellido1.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
         txtApellido2.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
-        txtFechaNacimiento.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
+        dateFechaNacimiento.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
         txtLugarNacimiento.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
         cbxSexo.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
         cbxEstadoCivil.setEnabled(accion == Accion.NUEVO || accion == Accion.ACTUALIZAR);
@@ -390,7 +412,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             txtNombre2.setText(estudiante.getNombre2());
             txtApellido1.setText(estudiante.getApellido1());
             txtApellido2.setText(estudiante.getApellido2());
-            txtFechaNacimiento.setText(estudiante.getFechaNacimiento("dd/MM/yyyy"));
+            //txtFechaNacimiento.setText(estudiante.getFechaNacimiento("dd/MM/yyyy"));
+            dateFechaNacimiento.setDate(estudiante.getFechaNacimiento());
             txtLugarNacimiento.setText(estudiante.getLugarNacimiento());
             lblEdad2.setText(
                     String.format(
@@ -430,7 +453,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             txtNombre2.setText(estudiante.getNombre2());
             txtApellido1.setText(estudiante.getApellido1());
             txtApellido2.setText(estudiante.getApellido2());
-            txtFechaNacimiento.setText(estudiante.getFechaNacimiento("dd/MM/yyyy"));
+            dateFechaNacimiento.setText(estudiante.getFechaNacimiento("dd/MM/yyyy"));
             txtLugarNacimiento.setText(estudiante.getLugarNacimiento());
             lblEdad2.setText(
                     String.format(
@@ -482,7 +505,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                             txtApellido1.getText(), //apellido1
                             txtApellido2.getText(), //apellido2
                             cbxSexo.getSelectedItem().toString(), //sexo
-                            txtFechaNacimiento.getText(), //fecha_nacimiento
+                            dateFechaNacimiento.getDate(), //fecha_nacimiento
                             txtLugarNacimiento.getText(), //lugar_nacimiento
                             cbxEstadoCivil.getSelectedItem().toString(), //estado_civil
                             cbxEtnia.getSelectedItem().toString(), //etnia
@@ -506,7 +529,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                             txtApellido1.getText(), //apellido1
                             txtApellido2.getText(), //apellido2
                             cbxSexo.getSelectedItem().toString(), //sexo
-                            txtFechaNacimiento.getText(), //fecha_nacimiento
+                            //txtFechaNacimiento.getText(), //fecha_nacimiento
+                            dateFechaNacimiento.getDate(), //fecha_nacimiento
                             txtLugarNacimiento.getText(), //lugar_nacimiento
                             cbxEstadoCivil.getSelectedItem().toString(), //estado_civil
                             cbxEtnia.getSelectedItem().toString(), //etnia
@@ -704,7 +728,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         txtNombre2.setText("");
         txtApellido1.setText("");
         txtApellido2.setText("");
-        txtFechaNacimiento.setText("");
+        //txtFechaNacimiento.setText("");
+        dateFechaNacimiento.setDate(null);
         lblEdad2.setText("");
         txtLugarNacimiento.setText("");
         cbxSexo.setSelectedIndex(-1);
@@ -768,7 +793,6 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         paneDatosPersonales = new javax.swing.JPanel();
         paneInformacionPersonal = new javax.swing.JPanel();
         lblFechaNacimiento = new javax.swing.JLabel();
-        txtFechaNacimiento = new javax.swing.JFormattedTextField();
         lblEdad = new javax.swing.JLabel();
         lblEdad2 = new javax.swing.JLabel();
         lblLugarNacimiento = new javax.swing.JLabel();
@@ -777,6 +801,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         cbxSexo = new javax.swing.JComboBox<>();
         lblEstadoCivil = new javax.swing.JLabel();
         cbxEstadoCivil = new javax.swing.JComboBox<>();
+        dateFechaNacimiento = new com.toedter.calendar.JDateChooser();
         paneDireccionHabitacion = new javax.swing.JPanel();
         lblEstado = new javax.swing.JLabel();
         cbxEstado = new javax.swing.JComboBox<>();
@@ -867,9 +892,6 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
 
         lblFechaNacimiento.setText("Fecha de nacimiento");
 
-        txtFechaNacimiento.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(new java.text.SimpleDateFormat("dd/MM/YYYY"))));
-        txtFechaNacimiento.setToolTipText("Formato: dd/MM/aaaa. \nEjemplo:. 31/12/2020");
-
         lblEdad.setText("Edad:");
 
         lblEdad2.setText("##");
@@ -906,8 +928,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                     .addGroup(paneInformacionPersonalLayout.createSequentialGroup()
                         .addComponent(lblFechaNacimiento)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtFechaNacimiento, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addComponent(dateFechaNacimiento, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(lblEdad)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblEdad2)
@@ -919,18 +941,19 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblEstadoCivil)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbxEstadoCivil, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(cbxEstadoCivil, 0, 165, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         paneInformacionPersonalLayout.setVerticalGroup(
             paneInformacionPersonalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(paneInformacionPersonalLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(paneInformacionPersonalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblFechaNacimiento)
-                    .addComponent(lblEdad)
-                    .addComponent(lblEdad2)
-                    .addComponent(txtFechaNacimiento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(paneInformacionPersonalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(paneInformacionPersonalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(lblFechaNacimiento)
+                        .addComponent(lblEdad)
+                        .addComponent(lblEdad2))
+                    .addComponent(dateFechaNacimiento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(paneInformacionPersonalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblLugarNacimiento)
@@ -1245,7 +1268,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         );
         paneExpedienteNotasLayout.setVerticalGroup(
             paneExpedienteNotasLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 285, Short.MAX_VALUE)
+            .addGap(0, 312, Short.MAX_VALUE)
         );
 
         tabDatos.addTab("Expediente de notas", paneExpedienteNotas);
@@ -1419,7 +1442,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblDetalle)
                     .addComponent(cbxDetalle, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(18, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         txtCedulaNumero.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -1558,8 +1581,8 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
                                 .addComponent(txtNombre1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addComponent(txtNombre2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addGap(18, 18, 18)
-                .addComponent(tabDatos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
+                .addComponent(tabDatos, javax.swing.GroupLayout.DEFAULT_SIZE, 343, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCerrar)
                     .addComponent(btnGuardar))
@@ -1724,6 +1747,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     private javax.swing.JComboBox<String> cbxMunicipio;
     private javax.swing.JComboBox<String> cbxParroquia;
     private javax.swing.JComboBox<String> cbxSexo;
+    private com.toedter.calendar.JDateChooser dateFechaNacimiento;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -1782,7 +1806,6 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     private javax.swing.JTextField txtCedulaNumero;
     private javax.swing.JTextField txtCorreoElectronico;
     private javax.swing.JTextField txtDireccion;
-    private javax.swing.JFormattedTextField txtFechaNacimiento;
     private javax.swing.JTextField txtLugarNacimiento;
     private javax.swing.JTextField txtNombre1;
     private javax.swing.JTextField txtNombre2;

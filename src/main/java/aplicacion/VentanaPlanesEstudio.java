@@ -1,13 +1,27 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2021 Roger Lovera <roger.lovera>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package aplicacion;
 
+import java.sql.Date;
 import servicios.ConnectionDB;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.DefaultTableModel;
@@ -17,29 +31,37 @@ import javax.swing.table.DefaultTableModel;
  * @author Roger Lovera
  */
 public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
+
     private final ConnectionDB conn;
+    private final SimpleDateFormat sdf;
+
     /**
      * Creates new form PlanesEstudio
+     *
      * @param conn
      */
     public VentanaPlanesEstudio(ConnectionDB conn) {
         initComponents();
         this.conn = conn;
-        if(this.conn != null){
+        sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+        if (this.conn != null) {
             fillComboBoxCarreras();
             fillTablePlanEstudio();
         }
     }
-    
+
     //Setters    
     //Getters
     //Actions
-    
-    private void fillComboBoxCarreras(){
+    private void fillComboBoxCarreras() {
         ResultSet rs;
+        
         cbxCarreras.removeAllItems();
         cbxCarreras.addItem("Seleccione...");
+        
         rs = conn.executeStoredProcedureWithResultSet("select_carreras");
+        
         try {
             while (rs.next()) {
                 cbxCarreras.addItem(rs.getString("carrera"));
@@ -48,77 +70,90 @@ public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
             Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private void fillComboBoxNiveles(){
+
+    private void fillComboBoxNiveles() {
         ResultSet rs;
+        Date fechaAprobacion;
+
         cbxNiveles.removeAllItems();
         cbxNiveles.addItem("Seleccione...");
-        rs = conn.executeStoredProcedureWithResultSet(
-                "select_planes_estudio_niveles",
-                cbxCarreras.getSelectedItem().toString(),
-                cbxFechaAprobacion.getSelectedItem().toString());
+
         try {
+            fechaAprobacion = new Date(sdf.parse(cbxFechaAprobacion.getSelectedItem().toString()).getTime());
+
+            rs = conn.executeStoredProcedureWithResultSet(
+                    "select_planes_estudio_niveles",
+                    cbxCarreras.getSelectedItem().toString(),
+                    fechaAprobacion);
+            
             while (rs.next()) {
                 cbxNiveles.addItem(rs.getString("nivel"));
+            }
+        } catch (ParseException | SQLException ex) {
+            Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);            
+        }
+    }
+
+    private void fillComboBoxFechaAprobacion() {
+        ResultSet rs;
+
+        cbxFechaAprobacion.removeAllItems();
+        cbxFechaAprobacion.addItem("Seleccione...");
+        rs = conn.executeStoredProcedureWithResultSet("select_planes_estudio_fechas_aprobacion", cbxCarreras.getSelectedItem().toString());
+        try {
+            while (rs.next()) {                
+                cbxFechaAprobacion.addItem(sdf.format(rs.getDate("fecha_aprobacion")));
             }
         } catch (SQLException ex) {
             Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private void fillComboBoxFechaAprobacion(){
+
+    private void fillTablePlanEstudio() {
         ResultSet rs;
-        cbxFechaAprobacion.removeAllItems();
-        cbxFechaAprobacion.addItem("Seleccione...");
-        rs = conn.executeStoredProcedureWithResultSet("select_planes_estudio_fechas_aprobacion",cbxCarreras.getSelectedItem().toString());
-        try {
-            while (rs.next()) {
-                cbxFechaAprobacion.addItem(rs.getString("fecha_aprobacion"));
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);
-        }  
-    }
-    
-    private void fillTablePlanEstudio(){         
-        ResultSet rs;
-        String[] header = {"id","Código","Unidad","HTA","HTAS","UC"};
-        Object[] fila;        
-        int[] widths = {0,140,-1,40,50,40};
-        DefaultTableModel model = new DefaultTableModel(header,0);
+        Date fechaAprobacion;
+
+        String[] header = {"id", "Código", "Unidad", "HTA", "HTAS", "UC"};
+        Object[] fila;
+        int[] widths = {0, 140, -1, 40, 50, 40};
+        DefaultTableModel model;
+        
+        model = new DefaultTableModel(header, 0);
         model.setColumnCount(header.length);
         model.setColumnIdentifiers(header);
-        
-        
-        if(cbxNiveles.getSelectedIndex() > 0){
-            rs = conn.executeStoredProcedureWithResultSet(
-                    "select_plan_estudio", 
-                    cbxCarreras.getSelectedItem().toString(),
-                    cbxNiveles.getSelectedItem().toString(),
-                    cbxFechaAprobacion.getSelectedItem().toString());
 
-            try {
-                while(rs.next()){
-                    fila = new Object[] {
-                        rs.getInt(1),   //id
+        try {
+            if (cbxNiveles.getSelectedIndex() > 0) {
+                fechaAprobacion = new Date(sdf.parse(cbxFechaAprobacion.getSelectedItem().toString()).getTime());
+                
+                rs = conn.executeStoredProcedureWithResultSet(
+                        "select_plan_estudio",
+                        cbxCarreras.getSelectedItem().toString(),
+                        cbxNiveles.getSelectedItem().toString(),
+                        fechaAprobacion);
+                
+                while (rs.next()) {
+                    fila = new Object[]{
+                        rs.getInt(1), //id
                         rs.getString(3),//codigo
                         rs.getString(4),//unidad
-                        rs.getInt(6),   //hta
-                        rs.getInt(7),   //htas
-                        rs.getInt(8)    //uc
+                        rs.getInt(6), //hta
+                        rs.getInt(7), //htas
+                        rs.getInt(8) //uc
                     };
 
                     model.addRow(fila);
                 }
-            } catch (SQLException ex) {
-                Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }        
+        } catch (ParseException | SQLException ex) {
+            Logger.getLogger(VentanaPlanesEstudio.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        tblPlanEstudio.setModel(model);
         
-        tblPlanEstudio.setModel(model);        
-        for(int i = 0; i < widths.length; i++){
-            if(widths[i]>=0){
-                tblPlanEstudio.getColumnModel().getColumn(i).setMaxWidth(widths[i]);        
+        for (int i = 0; i < widths.length; i++) {
+            if (widths[i] >= 0) {
+                tblPlanEstudio.getColumnModel().getColumn(i).setMaxWidth(widths[i]);
                 tblPlanEstudio.getColumnModel().getColumn(i).setMinWidth(widths[i]);
                 tblPlanEstudio.getTableHeader().getColumnModel().getColumn(i).setMaxWidth(widths[i]);
                 tblPlanEstudio.getTableHeader().getColumnModel().getColumn(i).setMinWidth(widths[i]);
@@ -275,20 +310,20 @@ public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void cbxCarrerasItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxCarrerasItemStateChanged
-        if(cbxCarreras.getSelectedIndex() <= 0){
+        if (cbxCarreras.getSelectedIndex() <= 0) {
             cbxFechaAprobacion.removeAllItems();
             cbxFechaAprobacion.setEnabled(false);
-        }else{            
+        } else {
             fillComboBoxFechaAprobacion();
             cbxFechaAprobacion.setEnabled(true);
         }
     }//GEN-LAST:event_cbxCarrerasItemStateChanged
 
     private void cbxFechaAprobacionItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxFechaAprobacionItemStateChanged
-        if(cbxFechaAprobacion.getSelectedIndex() <= 0){
+        if (cbxFechaAprobacion.getSelectedIndex() <= 0) {
             cbxNiveles.removeAllItems();
             cbxNiveles.setEnabled(false);
-        }else{
+        } else {
             fillComboBoxNiveles();
             cbxNiveles.setEnabled(true);
         }
@@ -300,19 +335,19 @@ public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
 
     private void cbxNivelesItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxNivelesItemStateChanged
         boolean enabled;
-        
+
         enabled = (cbxNiveles.getSelectedIndex() > 0);
-        
+
         btnMostrar.setEnabled(enabled);
-        if(tblPlanEstudio.getRowCount() > 0){
-            ((DefaultTableModel)tblPlanEstudio.getModel()).setRowCount(0);
+        if (tblPlanEstudio.getRowCount() > 0) {
+            ((DefaultTableModel) tblPlanEstudio.getModel()).setRowCount(0);
         }
     }//GEN-LAST:event_cbxNivelesItemStateChanged
 
     private void btnMostrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMostrarActionPerformed
         fillTablePlanEstudio();
         btnMostrar.setEnabled(false);
-        
+
     }//GEN-LAST:event_btnMostrarActionPerformed
 
 

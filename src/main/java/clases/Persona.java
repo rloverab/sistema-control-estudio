@@ -503,10 +503,13 @@ public class Persona {
     }
 
     private String getTelefonoSinFormato(String telefono) {
-        return telefono
+        if(telefono != null){
+            return telefono
                 .replace("(", "")
                 .replace(")", "")
                 .replace("-", "")
                 .replace(".", "");
+        }
+        return telefono;
     }
 }

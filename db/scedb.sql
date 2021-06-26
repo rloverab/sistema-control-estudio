@@ -684,8 +684,8 @@ DROP procedure IF EXISTS insert_periodo;
 DELIMITER $$
 CREATE PROCEDURE insert_periodo (
                     periodo VARCHAR(9), 
-                    fecha_inicial VARCHAR(10), 
-                    fecha_final VARCHAR(10))
+                    fecha_inicial DATE, 
+                    fecha_final DATE)
 BEGIN
     DECLARE periodo_id INT UNSIGNED DEFAULT NULL;
     
@@ -698,8 +698,8 @@ BEGIN
                         fecha_final)
         VALUES(
                         periodo, 
-                        STR_TO_DATE(fecha_inicial,"%d/%m/%Y"), 
-                        STR_TO_DATE(fecha_final,"%d/%m/%Y"));
+                        fecha_inicial, 
+                        fecha_final);
     ELSE
         SELECT "Periodo existente";
     END IF;
@@ -712,8 +712,8 @@ DELIMITER $$
 CREATE PROCEDURE update_periodo (
                     id INT UNSIGNED, 
                     periodo VARCHAR(9), 
-                    fecha_inicial VARCHAR(10), 
-                    fecha_final VARCHAR(10))
+                    fecha_inicial DATE, 
+                    fecha_final DATE)
 BEGIN
     DECLARE periodo_id INT UNSIGNED DEFAULT NULL;
     
@@ -726,8 +726,8 @@ BEGIN
     IF periodo_id IS NULL THEN
         UPDATE 	periodos 
         SET 	periodos.periodo = periodo, 
-                periodos.fecha_inicial = STR_TO_DATE(fecha_inicial,"%d/%m/%Y"), 
-                periodos.fecha_final = STR_TO_DATE(fecha_final,"%d/%m/%Y")
+                periodos.fecha_inicial = fecha_inicial, 
+                periodos.fecha_final = fecha_final
         WHERE 	periodos.id = id;
     ELSE
         SELECT "Ya existe otro periodo con esta misma denominación";
@@ -865,7 +865,7 @@ BEGIN
                 WHERE 	planes_estudio.carrera_id = carreras.id
                 AND 	planes_estudio.nivel_id = niveles.id
                 AND 	carreras.carrera = carrera
-                AND 	planes_estudio.fecha_aprobacion = fecha_aprobacion) as alias
+                AND 	planes_estudio.fecha_aprobacion = fecha_aprobacion) AS alias
     ORDER BY    orden ASC;
 END$$
 DELIMITER ;
@@ -1081,7 +1081,7 @@ CREATE PROCEDURE insert_persona (
                     apellido1 VARCHAR(15),
                     apellido2 VARCHAR(15),
                     sexo VARCHAR(9),
-                    fecha_nacimiento VARCHAR(10),
+                    fecha_nacimiento DATE,
                     lugar_nacimiento VARCHAR(40),
                     estado_civil VARCHAR(15),
                     etnia VARCHAR(37),
@@ -1122,7 +1122,7 @@ BEGIN
                             apellido1, 
                             get_string_or_null(apellido2), 
                             get_sexo_id(sexo), 
-                            STR_TO_DATE(fecha_nacimiento,"%d/%m/%Y"), 
+                            fecha_nacimiento,
                             lugar_nacimiento,
                             get_estado_civil_id(estado_civil), 
                             get_etnia_id(etnia),
@@ -1160,7 +1160,7 @@ CREATE PROCEDURE insert_estudiante (
                     apellido1 VARCHAR(15),
                     apellido2 VARCHAR(15),
                     sexo VARCHAR(9),
-                    fecha_nacimiento VARCHAR(10),
+                    fecha_nacimiento DATE,
                     lugar_nacimiento VARCHAR(40),
                     estado_civil VARCHAR(15),
                     etnia VARCHAR(37),
@@ -1350,10 +1350,10 @@ BEGIN
 END$$
 DELIMITER ;
 
-# Crear procedimiento almacenado "select_estudiantes_documentos"
-DROP procedure IF EXISTS select_estudiantes_documentos;
+# Crear procedimiento almacenado "select_estudiante_documentos"
+DROP procedure IF EXISTS select_estudiante_documentos;
 DELIMITER $$
-CREATE PROCEDURE select_estudiantes_documentos (estudiante_id INT UNSIGNED)
+CREATE PROCEDURE select_estudiante_documentos (estudiante_id INT UNSIGNED)
 BEGIN
     SELECT  documentos.documento,
             estudiantes_documentos.consignado
@@ -1385,7 +1385,7 @@ CREATE PROCEDURE update_estudiante (
                     apellido1 VARCHAR(15),
                     apellido2 VARCHAR(15),
                     sexo VARCHAR(9),
-                    fecha_nacimiento VARCHAR(10),
+                    fecha_nacimiento DATE,
                     lugar_nacimiento VARCHAR(40),
                     estado_civil VARCHAR(15),
                     etnia VARCHAR(37),
@@ -1413,7 +1413,7 @@ BEGIN
             personas.apellido1 = apellido1,
             personas.apellido2 = get_string_or_null(apellido2),
             personas.sexo_id = get_sexo_id(sexo),
-            personas.fecha_nacimiento = STR_TO_DATE(fecha_nacimiento,"%d/%m/%Y"),
+            personas.fecha_nacimiento = fecha_nacimiento,
             personas.lugar_nacimiento = lugar_nacimiento,
             personas.estado_civil_id = get_estado_civil_id(estado_civil),
             personas.etnia_id = get_etnia_id(etnia),
