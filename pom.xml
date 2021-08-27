@@ -3,15 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.vitadev</groupId>
     <artifactId>sce</artifactId>
-    <version>0.0.1</version>
-    <packaging>jar</packaging>
-    <repositories>
-        <repository>
-            <id>unknown-jars-temp-repo</id>
-            <name>A temporary repository created by NetBeans for libraries and jars it could not identify. Please replace the dependencies in this repository with correct ones and delete this repository.</name>
-            <url>file:${project.basedir}/lib</url>
-        </repository>
-    </repositories>
+    <version>0.0.2</version>
+    <packaging>jar</packaging>    
     <dependencies>
         <dependency>
             <groupId>org.mariadb.jdbc</groupId>
@@ -29,13 +22,58 @@
             <version>1.4</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports</artifactId>
+            <version>6.17.0</version>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
-    <name>Sistema de Control de Estudio</name>
+    <name>Sistema de Control de Estudios</name>
     <description>Sistema de Control de Estudios del Colegio Universitario de Rehabilitación May Hamilton
-Caracas - Venezuela</description>
+        Caracas - Venezuela</description>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <id>single</id>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <descriptorRefs>jar-with-dependencies</descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>aplicacion.VentanaPrincipalApp</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>templates</directory>
+                <includes>
+                    <include>cur.png</include>
+                    <include>mppeuct.png</include>
+                    <include>plan_estudio.jrxml</include>
+                </includes>                
+                <targetPath>
+                    templates
+                </targetPath>
+            </resource>
+        </resources>
+    </build>
+    
 </project>

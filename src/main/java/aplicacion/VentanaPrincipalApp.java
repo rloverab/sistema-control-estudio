@@ -16,7 +16,13 @@
  */
 package aplicacion;
 
+import clases.Consultas;
+import clases.Reportes;
+import java.beans.PropertyVetoException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
+import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 import servicios.ConnectionDB;
 
@@ -25,8 +31,10 @@ import servicios.ConnectionDB;
  * @author Roger Lovera
  */
 public class VentanaPrincipalApp extends javax.swing.JFrame {
+
     private final ConnectionDB conn;
-    enum Ventanas {PLANES_ESTUDIO, PERIODOS};
+    private final Consultas consultas;
+    private final Reportes reportes;
 
     /**
      * Creates new form VentanaPrincipal
@@ -34,37 +42,47 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
     public VentanaPrincipalApp() {
         initComponents();
         conn = new ConnectionDB(
-                "localhost", 
-                "3306", 
-                "sceusuario", 
-                "cambiame", 
+                "localhost",
+                "3306",
+                "sceusuario",
+                "cambiame",
                 "scedb");
         conn.open();
+
+        consultas = new Consultas(conn);
+        reportes = new Reportes(conn);
+
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
-    
-    private void abrirVentana(Ventanas ventana){        
-        switch(ventana){
-            case PLANES_ESTUDIO:
-                VentanaPlanesEstudio planesEstudio = new VentanaPlanesEstudio(conn);                
-                this.desktopPane.add(planesEstudio);
-                                
-                planesEstudio.setVisible(true);
-                break;
-            case PERIODOS:
-                VentanaPeriodos periodos = new VentanaPeriodos(conn);
-                this.desktopPane.add(periodos);
-                
-                periodos.setVisible(true);
-                break;
+
+    private void abrirVentana(
+            JInternalFrame internalFrame,
+            boolean multiplesInstancias) {
+        if (multiplesInstancias) {
+            this.desktopPane.add(internalFrame);
+            internalFrame.setVisible(true);
+        } else {
+            for (JInternalFrame frame : this.desktopPane.getAllFrames()) {
+                if (frame.getClass() == internalFrame.getClass()) {
+                    frame.toFront();
+                    try {
+                        frame.setSelected(true);
+                    } catch (PropertyVetoException ex) {
+                        Logger.getLogger(VentanaPrincipalApp.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    return;
+                }
+            }
+            this.desktopPane.add(internalFrame);
+            internalFrame.setVisible(true);
         }
     }
-    
-    private void exit(){
-        
-        if(JOptionPane.showInternalConfirmDialog(this.desktopPane, "¿Desea salir de la aplicación?", "Salir", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION){
+
+    private void exit() {
+
+        if (JOptionPane.showInternalConfirmDialog(this.desktopPane, "¿Desea salir de la aplicación?", "Salir", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             conn.close();
-            this.dispose();            
+            this.dispose();
         }
     }
 
@@ -151,7 +169,11 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
         menuAdministracion.add(itemAlumnos);
 
         itemDocentes.setText("Docentes");
-        itemDocentes.setEnabled(false);
+        itemDocentes.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                itemDocentesActionPerformed(evt);
+            }
+        });
         menuAdministracion.add(itemDocentes);
 
         itemInscripcion_Admin.setText("Inscripción");
@@ -354,19 +376,29 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
     }//GEN-LAST:event_itemSalirActionPerformed
 
     private void itemAlumnosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemAlumnosActionPerformed
-        VentanaEstudiantes iframeEstudiantes =  new VentanaEstudiantes(conn);
-        this.desktopPane.add(iframeEstudiantes);
-        iframeEstudiantes.setVisible(true);
+        abrirVentana(
+                new VentanaEstudiantes(consultas), 
+                false);
     }//GEN-LAST:event_itemAlumnosActionPerformed
 
     private void itemPensumActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemPensumActionPerformed
-        this.abrirVentana(Ventanas.PLANES_ESTUDIO);
-        
+        abrirVentana(
+                new VentanaPlanesEstudio(consultas, reportes),
+                false);
+
     }//GEN-LAST:event_itemPensumActionPerformed
 
     private void itemPeriodosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemPeriodosActionPerformed
-        this.abrirVentana(Ventanas.PERIODOS);
+        abrirVentana(
+                new VentanaPeriodos(conn),
+                false);
     }//GEN-LAST:event_itemPeriodosActionPerformed
+
+    private void itemDocentesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemDocentesActionPerformed
+        abrirVentana(
+                new VentanaDocentes(conn), 
+                false);
+    }//GEN-LAST:event_itemDocentesActionPerformed
 
     /**
      * @param args the command line arguments
@@ -378,7 +410,7 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {  
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;

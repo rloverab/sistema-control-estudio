@@ -48,10 +48,11 @@ public class VentanaPeriodos extends javax.swing.JInternalFrame {
      *
      * @param conn
      */
-    public VentanaPeriodos(ConnectionDB conn) {
+    public VentanaPeriodos(ConnectionDB conn) {    
         initComponents();
-        this.conn = conn;
-        txtPeriodo.setDocument(new CharacterLimiter(txtPeriodo, 9));
+        this.conn = conn;      
+        
+        txtPeriodo.setDocument(new CharacterLimiter(txtPeriodo, 12));
         dateFechaInicial.setDateFormatString("dd/MM/yyyy");
         dateFechaFinal.setDateFormatString("dd/MM/yyyy");
 
