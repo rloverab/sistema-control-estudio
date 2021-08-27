@@ -16,25 +16,25 @@ import java.util.Date;
  * @author Roger Lovera
  */
 public class Persona {        
-    protected int personaId;
-    protected String cedula;
-    protected String nombre1;
-    protected String nombre2;
-    protected String apellido1;
-    protected String apellido2;
-    protected String sexo;
-    protected Date fechaNacimiento;
-    protected String lugarNacimiento;
-    protected int edad;
-    protected String estadoCivil;
-    protected String etnia;
-    protected String estado;
-    protected String municipio;
-    protected String parroquia;
-    protected String direccion;
-    protected String telefonoLocal;
-    protected String telefonoMovil;
-    protected String correoElectronico;
+    private int personaId;
+    private String cedula;
+    private String nombre1;
+    private String nombre2;
+    private String apellido1;
+    private String apellido2;
+    private String sexo;
+    private Date fechaNacimiento;
+    private String lugarNacimiento;
+    private int edad;
+    private String estadoCivil;
+    private String etnia;
+    private String estado;
+    private String municipio;
+    private String parroquia;
+    private String direccion;
+    private String telefonoLocal;
+    private String telefonoMovil;
+    private String correoElectronico;
 
     //Contructores
     /**

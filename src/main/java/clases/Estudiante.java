@@ -16,109 +16,152 @@
  */
 package clases;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
  *
  * @author Roger Lovera
  */
-public class Estudiante extends Persona{
-    private int estudianteId;
-    private String carrera;
-    private String condicion;
-    private String detalle;
+public class Estudiante extends Persona {
+
+    private ArrayList<DatosAcademicos> datosAcademicos;
 
     //Constructor
+    public Estudiante(
+            int estudianteId,
+            int personaId,
+            String cedula,
+            String nombre1,
+            String nombre2,
+            String apellido1,
+            String apellido2,
+            String sexo,
+            Date fechaNacimiento,
+            String lugarNacimiento,
+            int edad,
+            String estadoCivil,
+            String etnia,
+            String estado,
+            String municipio,
+            String parroquia,
+            String direccion,
+            String telefonoLocal,
+            String telefonoMovil,
+            String correoElectronico,
+            String carrera,
+            String condicionEstado,
+            String condicionDetalle) {
+        this(0, 0, "", "", "", "", "", "", null, "", 0, "", "", "", "", "", "", "", "", "");
+
+        datosAcademicos = new ArrayList<>();
+        datosAcademicos.add(new DatosAcademicos(
+                estudianteId,
+                carrera,
+                condicionEstado,
+                condicionDetalle));
+    }
 
     public Estudiante(
             int estudianteId,
-            int personaId, 
-            String cedula, 
-            String nombre1, 
-            String nombre2, 
-            String apellido1, 
-            String apellido2, 
-            String sexo, 
-            Date fechaNacimiento, 
-            String lugarNacimiento, 
-            int edad, 
-            String estadoCivil, 
-            String etnia, 
-            String estado, 
-            String municipio, 
-            String parroquia, 
-            String direccion, 
-            String telefonoLocal, 
-            String telefonoMovil, 
-            String correoElectronico, 
-            String carrera, 
-            String condicionEstado, 
-            String condicionDetalle) {
-        super(                
-                personaId, 
-                cedula, 
-                nombre1, 
-                nombre2, 
-                apellido1, 
-                apellido2, 
-                sexo, 
-                fechaNacimiento, 
-                lugarNacimiento, 
-                edad, 
-                estadoCivil, 
-                etnia, 
-                estado, 
-                municipio, 
-                parroquia, 
-                direccion, 
-                telefonoLocal, 
-                telefonoMovil, 
-                correoElectronico
-        );
-        this.estudianteId = estudianteId;
-        this.carrera = carrera;
-        this.condicion = condicionEstado;
-        this.detalle = condicionDetalle;
+            int personaId,
+            String cedula,
+            String nombre1,
+            String nombre2,
+            String apellido1,
+            String apellido2,
+            String sexo,
+            Date fechaNacimiento,
+            String lugarNacimiento,
+            int edad,
+            String estadoCivil,
+            String etnia,
+            String estado,
+            String municipio,
+            String parroquia,
+            String direccion,
+            String telefonoLocal,
+            String telefonoMovil,
+            String correoElectronico) {
+        super(
+                personaId,
+                cedula,
+                nombre1,
+                nombre2,
+                apellido1,
+                apellido2,
+                sexo,
+                fechaNacimiento,
+                lugarNacimiento,
+                edad,
+                estadoCivil,
+                etnia,
+                estado,
+                municipio,
+                parroquia,
+                direccion,
+                telefonoLocal,
+                telefonoMovil,
+                correoElectronico);
+        datosAcademicos = new ArrayList<>();
     }
-    
+
     public Estudiante() {
-        this(0, 0, "", "", "", "", "", "", null, "", 0, "", "", "", "", "", "", "", "", "", "", "", "");
+        this(0, 0, "", "", "", "", "", "", null, "", 0, "", "", "", "", "", "", "", "", "");
     }
-    
+
     //Setters
-    
-    public void setEstudianteId(int estudiante_id) {
-        this.estudianteId = estudiante_id;
-    }    
-    
-    public void setCarrera(String carrera) {
-        this.carrera = carrera;
+    public void setPersona(Persona persona) {
+        setPersonaId(persona.getPersonaId());
+        setCedula(persona.getCedula());
+        setNombre1(persona.getNombre1());
+        setNombre2(persona.getNombre2());
+        setApellido1(persona.getApellido1());
+        setApellido2(persona.getApellido2());
+        setFechaNacimiento(persona.getFechaNacimiento());
+        setLugarNacimiento(persona.getLugarNacimiento());
+        setEdad(persona.getEdad());
+        setSexo(persona.getSexo());
+        setEstadoCivil(persona.getEstadoCivil());
+        setEtnia(persona.getEtnia());
+        setEstado(persona.getEstado());
+        setMunicipio(persona.getMunicipio());
+        setParroquia(persona.getParroquia());
+        setDireccion(persona.getDireccion());
+        setTelefonoLocal(persona.getTelefonoLocal(false));
+        setTelefonoMovil(persona.getTelefonoMovil(false));
+        setCorreoElectronico(persona.getCorreoElectronico());
     }
 
-    public void setCondicion(String condicion) {
-        this.condicion = condicion;
-    }
-
-    public void setDetalle(String condicion) {
-        this.detalle = condicion;
-    }
-        
     //Getters
+    public ArrayList<DatosAcademicos> getDatosAcademicos() {
+        return datosAcademicos;
+    }
     
-    public int getEstudianteId() {
-        return estudianteId;
-    }    
+    public ArrayList<String> getCarreras(){
+        ArrayList<String> carreras = new ArrayList<>();
+        
+        datosAcademicos.forEach(e -> carreras.add(e.getCarrera()));
+
+        return carreras;
+    }
     
-    public String getCarrera() {
-        return carrera;
+    //Actions
+    public void addDatosAcademicos(DatosAcademicos datosAcademicos) {
+        this.datosAcademicos.add(datosAcademicos);
     }
 
-    public String getCondicion() {
-        return condicion;
+    public void removeDatosAcademicos(DatosAcademicos datosAcademicos) {
+        this.datosAcademicos.remove(datosAcademicos);
     }
 
-    public String getDetalle() {
-        return detalle;
+    public void removeDatosAcademicos(int index) {
+        datosAcademicos.remove(index);
+    }
+
+    @Override
+    public String toString() {
+        return "Estudiante{" + "datosAcademicos=" + datosAcademicos + '}';
     }
     
     
