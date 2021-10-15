@@ -512,4 +512,15 @@ public class Persona {
         }
         return telefono;
     }
+    
+    @Override
+    public String toString() {
+        return String.format(
+                "%s%s, %s%s (%s)",
+                getApellido1(),
+                getApellido2() != null ? " " + getApellido2() : "",
+                getNombre1(),
+                getNombre2() != null ? " " + getNombre2() : "",
+                getCedula());
+    }
 }

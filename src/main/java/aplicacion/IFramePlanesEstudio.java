@@ -16,9 +16,9 @@
  */
 package aplicacion;
 
-import clases.Consultas;
+import clases.Queries;
 import clases.Controls;
-import clases.Reportes;
+import clases.Reports;
 import clases.Resolucion;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
@@ -28,9 +28,9 @@ import javax.swing.table.DefaultTableModel;
  *
  * @author Roger Lovera
  */
-public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
-    private final Consultas consultas;
-    private final Reportes reportes;
+public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
+    private final Queries consultas;
+    private final Reports reportes;
     private ArrayList<Resolucion> resoluciones;    
 
     /**
@@ -39,9 +39,9 @@ public class VentanaPlanesEstudio extends javax.swing.JInternalFrame {
      * @param consultas
      * @param reportes
      */    
-    public VentanaPlanesEstudio(
-            Consultas consultas, 
-            Reportes reportes) {
+    public IFramePlanesEstudio(
+            Queries consultas, 
+            Reports reportes) {
         initComponents();
         resoluciones = null;
         this.consultas = consultas;

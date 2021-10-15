@@ -29,11 +29,11 @@ import servicios.ConnectionDB.Status;
  *
  * @author Roger Lovera <roger.lovera>
  */
-public class Consultas {
+public class Queries {
 
     private final ConnectionDB conn;
 
-    public Consultas(ConnectionDB conn) {
+    public Queries(ConnectionDB conn) {
         this.conn = conn;
     }
 
@@ -73,7 +73,7 @@ public class Consultas {
                 }
             } catch (SQLException ex) {
                 persona = null;
-                Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         return persona;
@@ -225,6 +225,20 @@ public class Consultas {
 
         return arrayList;
     }
+    
+    public ArrayList<Resolucion> getResoluciones(String carrera, int limite){
+        ArrayList<Resolucion> resoluciones;
+        ArrayList<Resolucion> auxResoluciones;
+        
+        resoluciones = getResoluciones(carrera);
+        auxResoluciones = new ArrayList<>();
+        
+        for(int i = 0; i <= resoluciones.size() && i < limite; i++){
+            auxResoluciones.add(resoluciones.get(i));
+        }
+        
+        return auxResoluciones;
+    }
 
     public ArrayList<String> getNiveles(String carrera, int resolucion, int acta, Date fecha) {
         return getArrayList(
@@ -306,7 +320,7 @@ public class Consultas {
                 estudiante.addDatosAcademicos(datosAcademicos);
             }
         } catch (SQLException ex) {
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return estudiante;
@@ -321,9 +335,12 @@ public class Consultas {
 
         try {
             while (rs.next()) {
+                /*
                 if (docente == null) {
                     docente = new Docente();
                 }
+                */
+                docente = new Docente();
                 docente.setDocenteId(rs.getInt("docente_id"));
                 docente.setPersonaId(rs.getInt("persona_id"));
                 docente.setCedula(rs.getString("cedula"));
@@ -347,16 +364,87 @@ public class Consultas {
                 docente.setActivo(rs.getBoolean("activo"));
             }
         } catch (SQLException ex) {
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            docente = null;
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return docente;
+    }
+    
+    public ArrayList<Docente> getDocentes(boolean activo){
+        ResultSet rs;
+        ArrayList<Docente> docentes;
+        Docente docente;
+        
+        docentes = new ArrayList<>();
+        
+        rs = conn.executeStoredProcedureWithResultSet("select_docentes", activo);
+        
+        try {
+            while(rs.next()){
+                docente = new Docente();
+                docente.setDocenteId(rs.getInt("docente_id"));
+                docente.setPersonaId(rs.getInt("persona_id"));
+                docente.setCedula(rs.getString("cedula"));
+                docente.setNombre1(rs.getString("nombre1"));
+                docente.setNombre2(rs.getString("nombre2"));
+                docente.setApellido1(rs.getString("apellido1"));
+                docente.setApellido2(rs.getString("apellido2"));
+                docente.setSexo(rs.getString("sexo"));
+                docente.setFechaNacimiento(rs.getDate("fecha_nacimiento"));
+                docente.setLugarNacimiento(rs.getString("lugar_nacimiento"));
+                docente.setEdad(rs.getInt("edad"));
+                docente.setEstadoCivil(rs.getString("estado_civil"));
+                docente.setEtnia(rs.getString("etnia"));
+                docente.setEstado(rs.getString("estado"));
+                docente.setMunicipio(rs.getString("municipio"));
+                docente.setParroquia(rs.getString("parroquia"));
+                docente.setDireccion(rs.getString("direccion"));
+                docente.setTelefonoLocal(rs.getString("telefono_local"));
+                docente.setTelefonoMovil(rs.getString("telefono_movil"));
+                docente.setCorreoElectronico(rs.getString("correo_electronico"));
+                docente.setActivo(rs.getBoolean("activo"));
+                
+                docentes.add(docente);
+            }
+        } catch (SQLException ex) {            
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return docentes;
     }
 
     public ArrayList<Object[]> getPlanEstudio(String carrera, String nivel, int resolucion, int acta, Date fecha) {
         String[] fields = {"id", "codigo", "unidad", "hta", "htas", "uc"};
 
         return getArrayListObjects(fields, "select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
+    }
+    
+    public ArrayList<Materia> getPlanEstudio2(String carrera, String nivel, int resolucion, int acta, Date fecha){
+        ResultSet rs;
+        ArrayList<Materia> materias;
+        Materia materia;
+        
+        materias = new ArrayList<>();
+        
+        rs = conn.executeStoredProcedureWithResultSet("select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
+        
+        try {
+            while(rs.next()){
+                materia = new Materia(
+                        rs.getInt("id"),
+                        rs.getString("codigo"),
+                        rs.getString("unidad"),
+                        rs.getInt("hta"),
+                        rs.getInt("htas"),
+                        rs.getInt("uc"));
+                materias.add(materia);
+            }            
+        } catch (SQLException ex) {
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return materias;
     }
 
     //Actions
@@ -411,12 +499,12 @@ public class Consultas {
                 try {
                     conn.rollback();
                 } catch (SQLException ex1) {
-                    Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex1);
+                    Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
                 }
             }
 
             status = Status.ERROR;
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return status;
@@ -460,12 +548,12 @@ public class Consultas {
                 try {
                     conn.rollback();
                 } catch (SQLException ex1) {
-                    Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex1);
+                    Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
                 }
             }
 
             status = Status.ERROR;
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return status;
@@ -524,10 +612,10 @@ public class Consultas {
                 try {
                     conn.rollback();
                 } catch (SQLException ex1) {
-                    Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex1);
+                    Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
                 }
             }
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return status;
@@ -571,11 +659,11 @@ public class Consultas {
                 try {
                     conn.rollback();
                 } catch (SQLException ex1) {
-                    Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex1);
+                    Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
                 }
             }
             status = Status.ERROR;
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         return status;
@@ -599,5 +687,47 @@ public class Consultas {
         }
 
         return status;
+    }
+    
+    public ArrayList<Periodo> getPeriodos(){
+        ResultSet rs;
+        ArrayList<Periodo> arrayList;
+        Periodo periodo;
+
+        arrayList = new ArrayList<>();
+        rs = conn.executeStoredProcedureWithResultSet("select_periodos");
+
+        try {
+            while (rs.next()) {
+                periodo = new Periodo(
+                        rs.getInt("id"),
+                        rs.getString("periodo"),
+                        rs.getDate("fecha_inicial"),
+                        rs.getDate("fecha_final"),                        
+                        rs.getBoolean("vigente"));
+                arrayList.add(periodo);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Controls.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return arrayList;
+    }
+    
+    public Status insertPeriodo(Periodo periodo){
+        return conn.executeStoredProcedure(
+                "insert_periodo", 
+                periodo.getPeriodo(), 
+                periodo.getFechaInicial(), 
+                periodo.getFechaFinal());
+    }
+    
+    public Status updatePeriodo(Periodo periodo){
+        return conn.executeStoredProcedure(
+                "update_periodo", 
+                periodo.getId(), 
+                periodo.getPeriodo(), 
+                periodo.getFechaInicial(), 
+                periodo.getFechaFinal());
     }
 }

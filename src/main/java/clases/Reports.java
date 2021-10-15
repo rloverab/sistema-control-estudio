@@ -33,11 +33,11 @@ import servicios.ConnectionDB;
  *
  * @author Roger Lovera <roger.lovera>
  */
-public class Reportes {
+public class Reports {
 
     private final ConnectionDB conn;
 
-    public Reportes(ConnectionDB conn) {
+    public Reports(ConnectionDB conn) {
         this.conn = conn;
     }
 
@@ -58,7 +58,7 @@ public class Reportes {
                 JasperViewer.viewReport(jasperPrint, false);
             }
         } catch (JRException ex) {
-            Logger.getLogger(Reportes.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Reports.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

@@ -16,7 +16,7 @@
  */
 package aplicacion;
 
-import clases.Consultas;
+import clases.Queries;
 import clases.Controls;
 import clases.DatosAcademicos;
 import clases.Estudiante;
@@ -36,9 +36,9 @@ import servicios.ConnectionDB.Status;
  *
  * @author Roger Lovera
  */
-public class VentanaEstudiantes extends javax.swing.JInternalFrame {
+public class IFrameEstudiantes extends javax.swing.JInternalFrame {
 
-    private final Consultas consultas;
+    private final Queries queries;
     private Estudiante estudiante;
     private Persona persona;
     private Accion accion;
@@ -78,13 +78,13 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     /**
      * Creates new form Estudiantes
      *
-     * @param consultas
+     * @param queries
      */
-    public VentanaEstudiantes(Consultas consultas) {
+    public IFrameEstudiantes(Queries queries) {
         initComponents();
         persona = null;
         estudiante = null;
-        this.consultas = consultas;
+        this.queries = queries;
         txtCedulaNumero.getDocument().addDocumentListener(new TextFieldToToolTip(txtCedulaNumero));
         txtNombre1.getDocument().addDocumentListener(new TextFieldToToolTip(txtNombre1));
         txtNombre2.getDocument().addDocumentListener(new TextFieldToToolTip(txtNombre2));
@@ -104,7 +104,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             }
         }
 
-        if (this.consultas != null) {
+        if (this.queries != null) {
             fillComboBoxSexos();
             fillComboBoxEstadosCiviles();
             fillComboBoxEstados();
@@ -119,19 +119,19 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     //Getters
     //Actions
     private void fillComboBoxSexos() {
-        Controls.fillComboBox(cbxSexos, consultas.getSexos(), null);
+        Controls.fillComboBox(cbxSexos, queries.getSexos(), null);
     }
 
     private void fillComboBoxEstadosCiviles() {
-        Controls.fillComboBox(cbxEstadosCiviles, consultas.getEstadosCiviles(), null);
+        Controls.fillComboBox(cbxEstadosCiviles, queries.getEstadosCiviles(), null);
     }
 
     private void fillComboBoxEtnias() {
-        Controls.fillComboBox(cbxEtnias, consultas.getEtnias(), null);
+        Controls.fillComboBox(cbxEtnias, queries.getEtnias(), null);
     }
 
     private void fillComboBoxEstados() {
-        Controls.fillComboBox(cbxEstados, consultas.getEstados(), null);
+        Controls.fillComboBox(cbxEstados, queries.getEstados(), null);
     }
 
     private void fillComboBoxMunicipios() {
@@ -139,7 +139,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             cbxMunicipios.setEnabled(true);
             Controls.fillComboBox(
                     cbxMunicipios,
-                    consultas.getMunicipios(cbxEstados.getSelectedItem().toString()),
+                    queries.getMunicipios(cbxEstados.getSelectedItem().toString()),
                     null);
         } else {
             cbxMunicipios.removeAllItems();
@@ -152,7 +152,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             cbxParroquias.setEnabled(true);
             Controls.fillComboBox(
                     cbxParroquias,
-                    consultas.getParroquias(
+                    queries.getParroquias(
                             cbxEstados.getSelectedItem().toString(),
                             cbxMunicipios.getSelectedItem().toString()),
                     null);
@@ -167,7 +167,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
     private void fillComboBoxCondiciones() {
         Controls.fillComboBox(
                 cbxCondiciones,
-                consultas.getCondiciones(),
+                queries.getCondiciones(),
                 null);
     }
 
@@ -177,7 +177,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         if (cbxCondiciones.getSelectedIndex() > -1) {
             Controls.fillComboBox(
                     cbxDetalles,
-                    consultas.getDetalles(cbxCondiciones.getSelectedItem().toString()),
+                    queries.getDetalles(cbxCondiciones.getSelectedItem().toString()),
                     null);
 
             activo = cbxDetalles.getItemCount() > 0;
@@ -193,7 +193,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             if (estudiante.getDatosAcademicos().isEmpty()) {
                 Controls.fillComboBox(
                         cbxCarreras,
-                        consultas.getCarreras(),
+                        queries.getCarreras(),
                         null);
                 cbxCarreras.setSelectedIndex(-1);
             } else {
@@ -226,7 +226,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
             case NUEVO:
                 Controls.fillList(
                         listDocumentosPendientes,
-                        consultas.getDocumentos());
+                        queries.getDocumentos());
                 break;
         }
     }
@@ -274,7 +274,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
 
         if (!letra.isEmpty() && !numero.isEmpty()) {
             cedula = letra + numero;
-            estudiante = consultas.getEstudiante(cedula);
+            estudiante = queries.getEstudiante(cedula);
             return true;
         } else {
             JOptionPane.showInternalMessageDialog(
@@ -342,10 +342,10 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
 
         switch (accion) {
             case ACTUALIZAR:
-                status = consultas.updateEstudiante(estudiante);
+                status = queries.updateEstudiante(estudiante);
                 break;
             case NUEVO:
-                status = consultas.insertEstudiante(estudiante);
+                status = queries.insertEstudiante(estudiante);
                 break;
             default:
                 status = Status.ERROR;
@@ -380,7 +380,7 @@ public class VentanaEstudiantes extends javax.swing.JInternalFrame {
         numero = txtCedulaNumero.getText().trim();
         cedula = letra + numero;
 
-        persona = consultas.getPersonas(cedula);
+        persona = queries.getPersonas(cedula);
     }
 
     private void moveDocumentos(JList originList, JList destintionList) {

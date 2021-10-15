@@ -5,22 +5,23 @@ Sistema de Control de Estudios del CUR May Hamilton
 Autor: Roger Lovera
 
 Creado: 09/02/2021
-Actualizado: 17/08/2021
+Actualizado: 15/10/2021
 **************************************************/
 
 # Borrar base de datos "scedb" (sólo si existe)
 /*
-    NOTA: Esta sentencia borra la base de datos existente
-    con todo y registros. Solo para fines de pruebas y desarrollo.
+    NOTA: Esta sentencia borra la base de datos existente.
+    
+    Solo para fines de pruebas y desarrollo.
 
     Usar con precaución.
 
     Está sentencia está comentada por defecto(#)
 */
-DROP DATABASE IF EXISTS scedb;
+# DROP DATABASE IF EXISTS scedb;
 
 # Crear base de datos "scedb"
-CREATE SCHEMA scedb;
+CREATE SCHEMA IF NOT EXISTS scedb;
 
 # Seleccionar base de datos "scedb"
 USE scedb;
@@ -46,7 +47,7 @@ Tablas sin claves foraneas
 *************************/
 
 # Crear tabla "sexos"
-CREATE TABLE sexos (
+CREATE TABLE IF NOT EXISTS sexos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     sexo VARCHAR(9) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -56,7 +57,7 @@ CREATE TABLE sexos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estados_civiles"
-CREATE TABLE estados_civiles (
+CREATE TABLE IF NOT EXISTS estados_civiles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado_civil VARCHAR(15) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -66,7 +67,7 @@ CREATE TABLE estados_civiles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estados"
-CREATE TABLE estados (
+CREATE TABLE IF NOT EXISTS estados (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado VARCHAR(20) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,7 +77,7 @@ CREATE TABLE estados (
 ) ENGINE=InnoDB;
 
 # Crear tabla "municipios"
-CREATE TABLE municipios (
+CREATE TABLE IF NOT EXISTS municipios (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     municipio VARCHAR(30) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -86,7 +87,7 @@ CREATE TABLE municipios (
 ) ENGINE=InnoDB;
 
 # Crear tabla "parroquias"
-CREATE TABLE parroquias (
+CREATE TABLE IF NOT EXISTS parroquias (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     parroquia VARCHAR(60) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,7 +97,7 @@ CREATE TABLE parroquias (
 ) ENGINE=InnoDB;
     
 # Crear tabla "carreras"
-CREATE TABLE carreras (
+CREATE TABLE IF NOT EXISTS carreras (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     carrera VARCHAR(45) NOT NULL,    
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,7 +107,7 @@ CREATE TABLE carreras (
 ) ENGINE=InnoDB;
 
 # Crear tabla "niveles"
-CREATE TABLE niveles (
+CREATE TABLE IF NOT EXISTS niveles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nivel VARCHAR(50) NOT NULL,
     orden INT UNSIGNED NOT NULL,
@@ -117,7 +118,7 @@ CREATE TABLE niveles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "grados"
-CREATE TABLE grados (
+CREATE TABLE IF NOT EXISTS grados (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     grado VARCHAR(50) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -127,7 +128,7 @@ CREATE TABLE grados (
 ) ENGINE=InnoDB;
 
 # Crear tabla "unidades"
-CREATE TABLE unidades (
+CREATE TABLE IF NOT EXISTS unidades (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo VARCHAR(16) COLLATE utf8mb4_bin NOT NULL, # Case Sensitive
     unidad VARCHAR(120) NOT NULL,
@@ -138,7 +139,7 @@ CREATE TABLE unidades (
 ) ENGINE=InnoDB;
 
 # Crear tabla "modulos"
-CREATE TABLE modulos (
+CREATE TABLE IF NOT EXISTS modulos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
     modulo VARCHAR(200) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -148,7 +149,7 @@ CREATE TABLE modulos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "condiciones"
-CREATE TABLE condiciones (
+CREATE TABLE IF NOT EXISTS condiciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     condicion VARCHAR(18) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,7 +159,7 @@ CREATE TABLE condiciones (
 ) ENGINE=InnoDB;
 
 # Crear tabla "detalles"
-CREATE TABLE detalles (
+CREATE TABLE IF NOT EXISTS detalles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     detalle VARCHAR(15) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -168,7 +169,7 @@ CREATE TABLE detalles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "periodos"
-CREATE TABLE periodos (
+CREATE TABLE IF NOT EXISTS periodos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     periodo VARCHAR(12) NOT NULL,
     fecha_inicial DATE NOT NULL,
@@ -180,7 +181,7 @@ CREATE TABLE periodos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "etnias"
-CREATE TABLE etnias (
+CREATE TABLE IF NOT EXISTS etnias (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     etnia VARCHAR(37) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -190,7 +191,7 @@ CREATE TABLE etnias (
 ) ENGINE=InnoDB;
 
 # Crear tabla "documentos"
-CREATE TABLE documentos (
+CREATE TABLE IF NOT EXISTS documentos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     documento VARCHAR(60) NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -201,7 +202,7 @@ CREATE TABLE documentos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "resoluciones"
-CREATE TABLE resoluciones (
+CREATE TABLE IF NOT EXISTS resoluciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     resolucion SMALLINT UNSIGNED NOT NULL,
     acta SMALLINT UNSIGNED NOT NULL,
@@ -217,7 +218,7 @@ Tablas con claves foraneas
 ***************************/
 
 # Crear tabla "ubicaciones_geograficas"
-CREATE TABLE ubicaciones_geograficas (
+CREATE TABLE IF NOT EXISTS ubicaciones_geograficas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado_id INT UNSIGNED NOT NULL,
     municipio_id INT UNSIGNED NOT NULL,
@@ -231,7 +232,7 @@ CREATE TABLE ubicaciones_geograficas (
 ) ENGINE=InnoDB;
 
 # Crear tabla "personas"
-CREATE TABLE personas (
+CREATE TABLE IF NOT EXISTS personas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     cedula VARCHAR(9) NOT NULL,
     nombre1 VARCHAR(15) NOT NULL,
@@ -259,7 +260,7 @@ CREATE TABLE personas (
 ) ENGINE=InnoDB;
 
 # Crear tabla "docentes"
-CREATE TABLE docentes (
+CREATE TABLE IF NOT EXISTS docentes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     persona_id INT UNSIGNED NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT FALSE,
@@ -270,7 +271,7 @@ CREATE TABLE docentes (
 ) ENGINE=InnoDB;
 
 # Crear tabla "planes_estudio"
-CREATE TABLE planes_estudio (
+CREATE TABLE IF NOT EXISTS planes_estudio (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     carrera_id INT UNSIGNED NOT NULL,
     nivel_id INT UNSIGNED NOT NULL,
@@ -289,7 +290,7 @@ CREATE TABLE planes_estudio (
 ) ENGINE=InnoDB;
 
 # Crear tabla "planes_estudio_modulos"
-CREATE TABLE planes_estudio_modulos (
+CREATE TABLE IF NOT EXISTS planes_estudio_modulos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     plan_estudio_id INT UNSIGNED NOT NULL,
     modulo_id INT UNSIGNED NULL DEFAULT NULL,
@@ -305,7 +306,7 @@ CREATE TABLE planes_estudio_modulos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "prelaciones"
-CREATE TABLE prelaciones (
+CREATE TABLE IF NOT EXISTS prelaciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     plan_estudio_id_1 INT UNSIGNED NOT NULL,
     plan_estudio_id_2 INT UNSIGNED NULL DEFAULT NULL,    
@@ -318,7 +319,7 @@ CREATE TABLE prelaciones (
 ) ENGINE=InnoDB;
     
 # Crear tabla "ofertas_academicas"
-CREATE TABLE ofertas_academicas (
+CREATE TABLE IF NOT EXISTS ofertas_academicas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
     docente_id INT UNSIGNED NOT NULL,
     periodo_id INT UNSIGNED NOT NULL,
@@ -334,7 +335,7 @@ CREATE TABLE ofertas_academicas (
 ) ENGINE=InnoDB;
 
 # Crear tabla "condiciones_detalles"    
-CREATE TABLE condiciones_detalles (
+CREATE TABLE IF NOT EXISTS condiciones_detalles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     condicion_id INT UNSIGNED NOT NULL,
     detalle_id INT UNSIGNED NULL DEFAULT NULL,    
@@ -346,7 +347,7 @@ CREATE TABLE condiciones_detalles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estudiantes"
-CREATE TABLE estudiantes (
+CREATE TABLE IF NOT EXISTS estudiantes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     persona_id INT UNSIGNED NOT NULL,
     carrera_id INT UNSIGNED NOT NULL,
@@ -360,7 +361,7 @@ CREATE TABLE estudiantes (
 ) ENGINE=InnoDB;
 
 # Crear tabla "historiales_academicos"
-CREATE TABLE historiales_academicos (
+CREATE TABLE IF NOT EXISTS historiales_academicos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estudiante_id INT UNSIGNED NOT NULL,
     oferta_academica_id INT UNSIGNED NOT NULL,
@@ -374,7 +375,7 @@ CREATE TABLE historiales_academicos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estudiantes_documentos"
-CREATE TABLE estudiantes_documentos (
+CREATE TABLE IF NOT EXISTS estudiantes_documentos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estudiante_id INT UNSIGNED NOT NULL,
     documento_id INT UNSIGNED NOT NULL,    
@@ -1126,6 +1127,56 @@ BEGIN
                 municipios,
                 parroquias
     WHERE       personas.cedula = cedula
+    AND         personas.sexo_id = sexos.id
+    AND         personas.estado_civil_id = estados_civiles.id
+    AND         personas.etnia_id = etnias.id    
+    AND         personas.ubicacion_geografica_id = ubicaciones_geograficas.id
+    AND         personas.id = docentes.persona_id        
+    AND         ubicaciones_geograficas.estado_id = estados.id
+    AND         ubicaciones_geograficas.municipio_id = municipios.id
+    AND         ubicaciones_geograficas.parroquia_id = parroquias.id;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "select_docentes"
+DROP procedure IF EXISTS select_docentes;
+DELIMITER $$
+CREATE PROCEDURE select_docentes (activo BOOLEAN)
+BEGIN
+    SELECT      docentes.id AS docente_id,
+                personas.id AS persona_id,
+                personas.cedula,
+                personas.nombre1,
+                personas.nombre2,
+                personas.apellido1,
+                personas.apellido2,
+                sexos.sexo,
+                personas.fecha_nacimiento,
+                personas.lugar_nacimiento,
+                get_edad(personas.fecha_nacimiento) as edad,
+                estados_civiles.estado_civil,
+                etnias.etnia,
+                estados.estado,
+                municipios.municipio,            
+                parroquias.parroquia,
+                personas.direccion,
+                personas.telefono_local,
+                personas.telefono_movil,
+                personas.correo_electronico,
+                docentes.activo
+    FROM        personas,
+                sexos,
+                estados_civiles,
+                etnias,
+                docentes,
+                ubicaciones_geograficas,
+                estados,
+                municipios,
+                parroquias
+    WHERE       CASE 
+                    WHEN activo IS NOT NULL THEN docentes.activo = activo
+                    ELSE docentes.activo IS NOT NULL
+                END
     AND         personas.sexo_id = sexos.id
     AND         personas.estado_civil_id = estados_civiles.id
     AND         personas.etnia_id = etnias.id    
@@ -1943,6 +1994,44 @@ BEGIN
 END$$
 DELIMITER ;
 
+# Crear procedimiento almacenado "insert_sexo"
+DROP procedure IF EXISTS insert_sexo;
+DELIMITER $$
+CREATE PROCEDURE insert_sexo (sexo VARCHAR(9))
+BEGIN
+    DECLARE sexo_id INT UNSIGNED DEFAULT NULL;
+        
+    REPEAT
+        SET sexo_id = get_sexo_id(sexo);
+        
+        IF sexo_id IS NULL THEN
+            INSERT INTO sexos (sexo)
+            VALUES (sexo);
+        END IF;
+    UNTIL sexo_id IS NOT NULL
+    END REPEAT;    
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "insert_estado_civil"
+DROP procedure IF EXISTS insert_estado_civil;
+DELIMITER $$
+CREATE PROCEDURE insert_estado_civil (estado_civil VARCHAR(15))
+BEGIN
+    DECLARE estado_civil_id INT UNSIGNED DEFAULT NULL;
+        
+    REPEAT
+        SET estado_civil_id = get_estado_civil_id(estado_civil);
+        
+        IF estado_civil_id IS NULL THEN
+            INSERT INTO estados_civiles (estado_civil)
+            VALUES (estado_civil);
+        END IF;
+    UNTIL estado_civil_id IS NOT NULL
+    END REPEAT;    
+END$$
+DELIMITER ;
+
 /*-----------------
 ---- FUNCIONES ----
 -----------------*/
@@ -2453,15 +2542,22 @@ DELIMITER ;
 ---- PRECARGA DE DATOS ----
 -------------------------*/
 START TRANSACTION;
-# Sexos 
-INSERT INTO sexos (sexo) VALUES ('Femenino');
-INSERT INTO sexos (sexo) VALUES ('Masculino');
+# Sexos
+CALL insert_sexo('Femenino');
+CALL insert_sexo('Masculino');
+# INSERT INTO sexos (sexo) VALUES ('Femenino');
+# INSERT INTO sexos (sexo) VALUES ('Masculino');
 # Estados civiles
-INSERT INTO estados_civiles (estado_civil) VALUES ('Casada(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Soltera(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Divorciada(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Viuda(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Unión libre');
+CALL insert_estado_civil('Casada(o)');
+CALL insert_estado_civil('Soltera(o)');
+CALL insert_estado_civil('Divorciada(o)');
+CALL insert_estado_civil('Viuda(o)');
+CALL insert_estado_civil('Unión libre');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Casada(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Soltera(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Divorciada(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Viuda(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Unión libre');
 # Condiciones  detalles
 CALL insert_condicion_detalle('Activo','Regular');
 CALL insert_condicion_detalle('Activo','Reingreso');

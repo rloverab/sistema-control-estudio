@@ -17,16 +17,14 @@
 package aplicacion;
 
 import clases.CharacterLimiter;
+import clases.Periodo;
+import clases.Queries;
 import com.toedter.calendar.JTextFieldDateEditor;
 import java.awt.Component;
 import java.sql.Date;
 import javax.swing.table.DefaultTableModel;
-import servicios.ConnectionDB;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -38,26 +36,25 @@ import servicios.ConnectionDB.Status;
  *
  * @author Roger Lovera
  */
-public class VentanaPeriodos extends javax.swing.JInternalFrame {
-
-    private final ConnectionDB conn;
+public class IFramePeriodos extends javax.swing.JInternalFrame {
+    private final Queries queries;
     private int periodo_id = -1;
 
     /**
      * Creates new form Periodos
      *
-     * @param conn
+     * @param queries
      */
-    public VentanaPeriodos(ConnectionDB conn) {    
+    public IFramePeriodos(Queries queries) {
         initComponents();
-        this.conn = conn;      
+        this.queries = queries;
         
         txtPeriodo.setDocument(new CharacterLimiter(txtPeriodo, 12));
         dateFechaInicial.setDateFormatString("dd/MM/yyyy");
         dateFechaFinal.setDateFormatString("dd/MM/yyyy");
 
         for (Component component : dateFechaInicial.getComponents()) {
-            System.out.println(component.toString());
+            //System.out.println(component.toString());
             if (component instanceof JTextFieldDateEditor) {
                 ((JTextFieldDateEditor) component).setEditable(false);
                 ((JTextFieldDateEditor) component).setOpaque(true);
@@ -65,7 +62,7 @@ public class VentanaPeriodos extends javax.swing.JInternalFrame {
         }
 
         for (Component component : dateFechaFinal.getComponents()) {
-            System.out.println(component.toString());
+            //System.out.println(component.toString());
             if (component instanceof JTextFieldDateEditor) {
                 ((JTextFieldDateEditor) component).setEditable(false);
                 ((JTextFieldDateEditor) component).setOpaque(true);
@@ -84,7 +81,7 @@ public class VentanaPeriodos extends javax.swing.JInternalFrame {
         Object[] fila;
         int[] widths = {0, -1, 100, 100, 100};
         DefaultTableModel dtm;
-        ResultSet rs;
+        ArrayList<Periodo> periodos;
         SimpleDateFormat sdf;
 
         sdf = new SimpleDateFormat("dd/MM/yyyy");
@@ -116,24 +113,19 @@ public class VentanaPeriodos extends javax.swing.JInternalFrame {
                 tblPeriodos.getTableHeader().getColumnModel().getColumn(i).setMaxWidth(widths[i]);
                 tblPeriodos.getTableHeader().getColumnModel().getColumn(i).setMinWidth(widths[i]);
             }
-        }
-
-        rs = conn.executeStoredProcedureWithResultSet("select_periodos");
-
-        try {
-            while (rs.next()) {
-                fila = new Object[]{
-                    rs.getInt(1),                   //id
-                    rs.getString(2),                //periodo
-                    rs.getDate(3),                  //fecha_inicial
-                    rs.getDate(4),                  //fecha_final
-                    rs.getBoolean(5) ? "Si" : "No"  //vigente
-                };
-                dtm.addRow(fila);
-
-            }
-        } catch (SQLException ex) {
-            Logger.getLogger(VentanaPeriodos.class.getName()).log(Level.SEVERE, null, ex);
+        }       
+        
+        periodos = queries.getPeriodos();
+        
+        for (Periodo periodo : periodos) {
+            fila = new Object[] {
+                    periodo.getId(),                    //id
+                    periodo.getPeriodo(),               //periodo
+                    periodo.getFechaInicial(),          //fecha_inicial
+                    periodo.getFechaFinal(),            //fecha_final
+                    periodo.isActivo() ? "Si" : "No"    //vigente
+            };
+            dtm.addRow(fila);
         }
 
         for (int i = 0; i < tblPeriodos.getColumnModel().getColumnCount(); i++) {
@@ -144,11 +136,27 @@ public class VentanaPeriodos extends javax.swing.JInternalFrame {
     }
 
     private Status insertPeriodo(String periodo, java.util.Date fechaInicial, java.util.Date fechaFinal) {
-        return conn.executeStoredProcedure("insert_periodo", periodo, fechaInicial, fechaFinal);
+        Date auxFechaInicial;
+        Date auxFechaFinal;        
+        Periodo auxPeriodo;
+        
+        auxFechaInicial = new Date(fechaInicial.getTime());
+        auxFechaFinal = new Date(fechaFinal.getTime());        
+        auxPeriodo = new Periodo(-1, periodo, auxFechaInicial, auxFechaFinal, false);
+        
+        return queries.insertPeriodo(auxPeriodo);
     }
 
     private Status updatePeriodo(int id, String periodo, java.util.Date fechaInicial, java.util.Date fechaFinal) {
-        return conn.executeStoredProcedure("update_periodo", id, periodo, fechaInicial, fechaFinal);
+        Date auxFechaInicial;
+        Date auxFechaFinal;        
+        Periodo auxPeriodo;
+        
+        auxFechaInicial = new Date(fechaInicial.getTime());
+        auxFechaFinal = new Date(fechaFinal.getTime());        
+        auxPeriodo = new Periodo(id, periodo, auxFechaInicial, auxFechaFinal, false);
+        
+        return queries.updatePeriodo(auxPeriodo);
     }
 
     private void setEnabledFields(boolean enabled) {

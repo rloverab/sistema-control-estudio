@@ -16,7 +16,7 @@
  */
 package aplicacion;
 
-import clases.Consultas;
+import clases.Queries;
 import clases.Controls;
 import clases.Docente;
 import clases.Formatter;
@@ -33,9 +33,9 @@ import servicios.ConnectionDB.Status;
  *
  * @author Roger Lovera <roger.lovera>
  */
-public class VentanaDocentes extends javax.swing.JInternalFrame {
+public class IFrameDocentes extends javax.swing.JInternalFrame {
     private final ConnectionDB conn;
-    private final Consultas consultas;
+    private final Queries consultas;
     private Docente docente;
     private Persona persona;
     private Accion accion;
@@ -73,12 +73,12 @@ public class VentanaDocentes extends javax.swing.JInternalFrame {
      * Creates new form VentanaDocentes
      * @param conn
      */
-    public VentanaDocentes(ConnectionDB conn) {
+    public IFrameDocentes(ConnectionDB conn) {
         initComponents();
         this.conn = conn;
         
         //controls = new Controls(conn);
-        consultas =  new Consultas(conn);
+        consultas =  new Queries(conn);
         
         txtCedulaNumero.getDocument().addDocumentListener(new TextFieldToToolTip(txtCedulaNumero));
         txtNombre1.getDocument().addDocumentListener(new TextFieldToToolTip(txtNombre1));
