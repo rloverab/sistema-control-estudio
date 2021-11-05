@@ -114,25 +114,25 @@ public class IFrameDocentes extends javax.swing.JInternalFrame {
     //Actions
     
     private void fillComboBoxSexos() {        
-        Controls.fillComboBox(cbxSexos, consultas.getSexos(), null);        
+        Controls.fillComboBoxString(cbxSexos, consultas.getSexos(), null);        
     }
 
     private void fillComboBoxEstadosCiviles() {        
-        Controls.fillComboBox(cbxEstadosCiviles, consultas.getEstadosCiviles(), null);
+        Controls.fillComboBoxString(cbxEstadosCiviles, consultas.getEstadosCiviles(), null);
     }
 
     private void fillComboBoxEtnias() {        
-        Controls.fillComboBox(cbxEtnias, consultas.getEtnias(), null);
+        Controls.fillComboBoxString(cbxEtnias, consultas.getEtnias(), null);
     }
 
     private void fillComboBoxEstados() {
-        Controls.fillComboBox(cbxEstados, consultas.getEstados(), null);
+        Controls.fillComboBoxString(cbxEstados, consultas.getEstados(), null);
     }
 
     private void fillComboBoxMunicipios() {
         if (cbxEstados.getSelectedIndex() >= 0) {
             cbxMunicipios.setEnabled(true);            
-            Controls.fillComboBox(
+            Controls.fillComboBoxString(
                     cbxMunicipios, 
                     consultas.getMunicipios(cbxEstados.getSelectedItem().toString()), 
                     null);
@@ -145,7 +145,7 @@ public class IFrameDocentes extends javax.swing.JInternalFrame {
     private void fillComboBoxParroquias() {
         if (cbxMunicipios.getSelectedIndex() >= 0) {
             cbxParroquias.setEnabled(true);            
-            Controls.fillComboBox(
+            Controls.fillComboBoxString(
                     cbxParroquias, 
                     consultas.getParroquias(
                             cbxEstados.getSelectedItem().toString(), 

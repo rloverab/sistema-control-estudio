@@ -16,12 +16,14 @@
  */
 package aplicacion;
 
+import clases.Carrera;
 import clases.Queries;
 import clases.Controls;
 import clases.DatosAcademicos;
 import clases.Estudiante;
 import clases.Documento;
 import clases.Formatter;
+import clases.Item;
 import clases.Persona;
 import clases.TextFieldToToolTip;
 import com.toedter.calendar.JTextFieldDateEditor;
@@ -119,25 +121,25 @@ public class IFrameEstudiantes extends javax.swing.JInternalFrame {
     //Getters
     //Actions
     private void fillComboBoxSexos() {
-        Controls.fillComboBox(cbxSexos, queries.getSexos(), null);
+        Controls.fillComboBoxString(cbxSexos, queries.getSexos(), null);
     }
 
     private void fillComboBoxEstadosCiviles() {
-        Controls.fillComboBox(cbxEstadosCiviles, queries.getEstadosCiviles(), null);
+        Controls.fillComboBoxString(cbxEstadosCiviles, queries.getEstadosCiviles(), null);
     }
 
     private void fillComboBoxEtnias() {
-        Controls.fillComboBox(cbxEtnias, queries.getEtnias(), null);
+        Controls.fillComboBoxString(cbxEtnias, queries.getEtnias(), null);
     }
 
     private void fillComboBoxEstados() {
-        Controls.fillComboBox(cbxEstados, queries.getEstados(), null);
+        Controls.fillComboBoxString(cbxEstados, queries.getEstados(), null);
     }
 
     private void fillComboBoxMunicipios() {
         if (cbxEstados.getSelectedIndex() >= 0) {
             cbxMunicipios.setEnabled(true);
-            Controls.fillComboBox(
+            Controls.fillComboBoxString(
                     cbxMunicipios,
                     queries.getMunicipios(cbxEstados.getSelectedItem().toString()),
                     null);
@@ -150,7 +152,7 @@ public class IFrameEstudiantes extends javax.swing.JInternalFrame {
     private void fillComboBoxParroquias() {
         if (cbxMunicipios.getSelectedIndex() >= 0) {
             cbxParroquias.setEnabled(true);
-            Controls.fillComboBox(
+            Controls.fillComboBoxString(
                     cbxParroquias,
                     queries.getParroquias(
                             cbxEstados.getSelectedItem().toString(),
@@ -165,7 +167,7 @@ public class IFrameEstudiantes extends javax.swing.JInternalFrame {
     }
 
     private void fillComboBoxCondiciones() {
-        Controls.fillComboBox(
+        Controls.fillComboBoxString(
                 cbxCondiciones,
                 queries.getCondiciones(),
                 null);
@@ -175,7 +177,7 @@ public class IFrameEstudiantes extends javax.swing.JInternalFrame {
         boolean activo;
 
         if (cbxCondiciones.getSelectedIndex() > -1) {
-            Controls.fillComboBox(
+            Controls.fillComboBoxString(
                     cbxDetalles,
                     queries.getDetalles(cbxCondiciones.getSelectedItem().toString()),
                     null);
@@ -189,17 +191,34 @@ public class IFrameEstudiantes extends javax.swing.JInternalFrame {
     }
 
     private void fillComboBoxCarreras() {
-        if (estudiante != null) {
-            if (estudiante.getDatosAcademicos().isEmpty()) {
-                Controls.fillComboBox(
+        ArrayList<Carrera> carreras;
+        ArrayList<Item> items;
+        
+        if (estudiante != null) {            
+            items =  new ArrayList<>();
+            carreras = queries.getCarreras();
+            
+            if (estudiante.getDatosAcademicos().isEmpty()) {                
+                
+                carreras.forEach(carrera -> items.add(new Item(carrera)));
+                
+                Controls.fillComboBoxItem(
                         cbxCarreras,
-                        queries.getCarreras(),
+                        items,
                         null);
+                
                 cbxCarreras.setSelectedIndex(-1);
             } else {
-                Controls.fillComboBox(
+                carreras.forEach(carrera -> {
+                    estudiante.getCarreras().forEach(estudianteCarrera -> {                        
+                        if(carrera.getCarrera().equals(estudianteCarrera)){
+                            items.add(new Item(carrera));
+                        }
+                    });                    
+                });
+                Controls.fillComboBoxItem(
                         cbxCarreras,
-                        estudiante.getCarreras(),
+                        items,
                         null);
             }
         }

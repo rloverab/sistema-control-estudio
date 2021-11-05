@@ -196,11 +196,34 @@ public class Queries {
                 "select_detalles",
                 condicion);
     }
-
+    /*
     public ArrayList<String> getCarreras() {
         return getArrayList(
                 "carrera",
                 "select_carreras");
+    }
+    */
+    
+    public ArrayList<Carrera> getCarreras(){
+        ResultSet rs;
+        ArrayList<Carrera> arrayList;
+        Carrera carrera;
+        
+        arrayList = new ArrayList<>();
+        rs = conn.executeStoredProcedureWithResultSet("select_carreras");
+        
+        try {
+            while (rs.next()) {
+                carrera = new Carrera(
+                        rs.getInt("id"),
+                        rs.getString("carrera"));
+                arrayList.add(carrera);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Controls.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return arrayList;
     }
 
     public ArrayList<Resolucion> getResoluciones(String carrera) {
@@ -214,6 +237,7 @@ public class Queries {
         try {
             while (rs.next()) {
                 resolucion = new Resolucion(
+                        rs.getInt("id"),
                         rs.getInt("resolucion"),
                         rs.getInt("acta"),
                         rs.getDate("fecha"));
@@ -239,16 +263,34 @@ public class Queries {
         
         return auxResoluciones;
     }
-
-    public ArrayList<String> getNiveles(String carrera, int resolucion, int acta, Date fecha) {
-        return getArrayList(
-                "nivel",
+    
+    public ArrayList<Nivel> getNiveles(String carrera, int resolucion, int acta, Date fecha){
+        ResultSet rs;
+        ArrayList<Nivel> niveles;
+        Nivel nivel;
+        
+        niveles = new ArrayList<>();
+        rs = conn.executeStoredProcedureWithResultSet(
                 "select_planes_estudio_niveles",
                 carrera,
                 resolucion,
                 acta,
                 fecha);
-    }
+        
+        try {
+            while (rs.next()) {
+                nivel = new Nivel(
+                        rs.getInt("id"),
+                        rs.getString("nivel"),
+                        rs.getInt("orden"));
+                niveles.add(nivel);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Controls.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return niveles;
+    }    
 
     public ArrayList<String> getEstudianteDocumentos(int estudiante_id, boolean consignado) {
         return getArrayList(
@@ -371,6 +413,37 @@ public class Queries {
         return docente;
     }
     
+    public ArrayList<OfertaAcademica> getOfertasAcademicas(int periodo_id, int carrera_id, int nivel_id, int unidad_id){
+        ResultSet rs;
+        ArrayList<OfertaAcademica> ofertasAcademicas;
+        OfertaAcademica ofertaAcademica;
+        
+        ofertasAcademicas = new ArrayList<>();
+        
+        rs = conn.executeStoredProcedureWithResultSet("select_ofertas_academicas_modulos", periodo_id, carrera_id, nivel_id, unidad_id);
+        
+        try {
+            while(rs.next()){
+                /*
+                ofertaAcademica = new OfertaAcademica(
+                        rs.getInt("id"),                         
+                        rs.getInt("periodo_id"),
+                        rs.getInt("plan_estudio_modulo_id"),                        
+                        rs.getInt("cupos"),
+                        rs.getInt("id_seccion"),
+                        rs.getInt("id_nomenclatura")
+                );
+                
+                ofertasAcademicas.add(ofertaAcademica);
+                */
+            }
+        } catch (SQLException ex) {            
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return ofertasAcademicas;
+    }
+    
     public ArrayList<Docente> getDocentes(boolean activo){
         ResultSet rs;
         ArrayList<Docente> docentes;
@@ -420,25 +493,90 @@ public class Queries {
         return getArrayListObjects(fields, "select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
     }
     
-    public ArrayList<Materia> getPlanEstudio2(String carrera, String nivel, int resolucion, int acta, Date fecha){
-        ResultSet rs;
-        ArrayList<Materia> materias;
-        Materia materia;
+    /*
+    public ArrayList<Unidad> getPlanEstudio2(String carrera, String nivel, int resolucion, int acta, Date fecha){
+        ResultSet rsUnidades;
+        ResultSet rsModulos;
+        ArrayList<Unidad> materias;        
+        Unidad materia;
+        Modulo modulo;
         
         materias = new ArrayList<>();
         
-        rs = conn.executeStoredProcedureWithResultSet("select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
+        rsUnidades = conn.executeStoredProcedureWithResultSet("select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
         
         try {
-            while(rs.next()){
-                materia = new Materia(
-                        rs.getInt("id"),
-                        rs.getString("codigo"),
-                        rs.getString("unidad"),
-                        rs.getInt("hta"),
-                        rs.getInt("htas"),
-                        rs.getInt("uc"));
+            while(rsUnidades.next()){                
+                materia = new Unidad(
+                        rsUnidades.getInt("id"),
+                        rsUnidades.getString("codigo"),
+                        rsUnidades.getString("unidad"),
+                        rsUnidades.getInt("hta"),
+                        rsUnidades.getInt("htas"),
+                        rsUnidades.getInt("uc"));
+                
+                rsModulos = conn.executeStoredProcedureWithResultSet(
+                        "select_plan_estudio_modulo", 
+                        materia.getId());
+                
+                while(rsModulos.next()){
+                    modulo = new Modulo(
+                            rsModulos.getInt("id"), 
+                            rsModulos.getString("modulo"), 
+                            rsModulos.getInt("hta"), 
+                            rsModulos.getInt("htas"));
+                    materia.getModulos().add(modulo);
+                }
+                
                 materias.add(materia);
+            }            
+        } catch (SQLException ex) {
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return materias;
+    }
+    */
+    
+    public ArrayList<Unidad> getPlanEstudio3(int carrera_id, int nivel_id, int resolucion_id){
+        ResultSet rsUnidades;
+        ResultSet rsModulos;
+        ArrayList<Unidad> materias;        
+        Unidad unidad;
+        Modulo modulo;
+        
+        materias = new ArrayList<>();        
+        
+        rsUnidades = conn.executeStoredProcedureWithResultSet(
+                "select_plan_estudio", 
+                carrera_id >= 0 ? carrera_id : null, 
+                nivel_id >= 0 ? nivel_id : null, 
+                resolucion_id >= 0 ? resolucion_id : null);
+        
+        try {
+            while(rsUnidades.next()){                
+                unidad = new Unidad(
+                        rsUnidades.getInt("id"),
+                        rsUnidades.getString("codigo"),
+                        rsUnidades.getString("unidad"),
+                        rsUnidades.getInt("hta"),
+                        rsUnidades.getInt("htas"),
+                        rsUnidades.getInt("uc"));
+                
+                rsModulos = conn.executeStoredProcedureWithResultSet(
+                        "select_plan_estudio_modulo", 
+                        unidad.getId());
+                
+                while(rsModulos.next()){
+                    modulo = new Modulo(
+                            rsModulos.getInt("id"), 
+                            rsModulos.getString("modulo"), 
+                            rsModulos.getInt("hta"), 
+                            rsModulos.getInt("htas"));
+                    unidad.getModulos().add(modulo);
+                }
+                
+                materias.add(unidad);
             }            
         } catch (SQLException ex) {
             Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
@@ -669,8 +807,7 @@ public class Queries {
         return status;
     }
 
-    public Status updateEstudianteDocumento(
-            DatosAcademicos datosAcademicos) {
+    public Status updateEstudianteDocumento(DatosAcademicos datosAcademicos) {
         Status status;
 
         status = Status.OK;

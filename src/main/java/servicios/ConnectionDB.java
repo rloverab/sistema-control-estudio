@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Date;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -193,7 +192,7 @@ public final class ConnectionDB {
                             cst.setDate(i + 1, (Date) params[i]);
                     }
                 } else {
-                    cst.setNull(i + 1, -1);
+                    cst.setNull(i + 1, -1);                                        
                 }
 
             }

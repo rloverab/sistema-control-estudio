@@ -2,10 +2,10 @@
 Script de creación de la base de datos para el 
 Sistema de Control de Estudios del CUR May Hamilton
 
-Autor: Roger Lovera
+Autor: Roger Lovera <rloverab@yahoo.es>
 
 Creado: 09/02/2021
-Actualizado: 15/10/2021
+Actualizado: 03/11/2021
 **************************************************/
 
 # Borrar base de datos "scedb" (sólo si existe)
@@ -18,7 +18,7 @@ Actualizado: 15/10/2021
 
     Está sentencia está comentada por defecto(#)
 */
-# DROP DATABASE IF EXISTS scedb;
+#DROP DATABASE IF EXISTS scedb;
 
 # Crear base de datos "scedb"
 CREATE SCHEMA IF NOT EXISTS scedb;
@@ -321,17 +321,18 @@ CREATE TABLE IF NOT EXISTS prelaciones (
 # Crear tabla "ofertas_academicas"
 CREATE TABLE IF NOT EXISTS ofertas_academicas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
-    docente_id INT UNSIGNED NOT NULL,
+    docente_id INT UNSIGNED NULL DEFAULT NULL,
     periodo_id INT UNSIGNED NOT NULL,
-    plan_estudio_id INT UNSIGNED NOT NULL,
-    seccion CHAR(2) NOT NULL,
+    plan_estudio_modulo_id INT UNSIGNED NOT NULL,        
     cupos SMALLINT UNSIGNED NOT NULL,
+    id_seccion SMALLINT UNSIGNED NOT NULL,
+    id_nomenclatura SMALLINT UNSIGNED NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),    
     FOREIGN KEY (docente_id) REFERENCES docentes (id),
     FOREIGN KEY (periodo_id) REFERENCES periodos (id),
-    FOREIGN KEY (plan_estudio_id) REFERENCES planes_estudio (id)
+    FOREIGN KEY (plan_estudio_modulo_id) REFERENCES planes_estudio_modulos (id)
 ) ENGINE=InnoDB;
 
 # Crear tabla "condiciones_detalles"    
@@ -834,14 +835,88 @@ DELIMITER ;
 # Crear procedimiento almacenado "select_plan_estudio"
 DROP procedure IF EXISTS select_plan_estudio;
 DELIMITER $$
+/*
 CREATE PROCEDURE select_plan_estudio (
                     carrera VARCHAR(45), 
                     nivel VARCHAR(50),
                     resolucion SMALLINT,
                     acta SMALLINT,
                     fecha DATE)
+*/
+CREATE PROCEDURE select_plan_estudio (
+                    carrera_id INT UNSIGNED, 
+                    nivel_id INT UNSIGNED,
+                    resolucion_id INT UNSIGNED)
 BEGIN
+	DECLARE resolucion_id_last INT UNSIGNED DEFAULT NULL;
+
+	IF resolucion_id IS NULL THEN
+		SELECT 		planes_estudio.resolucion_id INTO resolucion_id_last
+		FROM 		planes_estudio,
+					resoluciones			
+		WHERE 		planes_estudio.resolucion_id = resoluciones.id 
+		AND			planes_estudio.carrera_id = carrera_id
+		AND			planes_estudio.nivel_id = nivel_id		
+		AND			CASE WHEN resolucion_id IS NOT NULL THEN
+						planes_estudio.resolucion_id = resolucion_id
+					ELSE 
+						planes_estudio IS NOT NULL
+					END
+		ORDER BY	resoluciones.fecha DESC
+		LIMIT 1;
+	END IF;
+	
     SELECT      planes_estudio.id, 
+                carreras.carrera, 
+                unidades.codigo, 
+                unidades.unidad, 
+                niveles.nivel,
+                IF( planes_estudio.grado_id IS NOT NULL, 
+                    get_grado(planes_estudio.grado_id),
+                    NULL) AS grado,
+                SUM(planes_estudio_modulos.htas) AS htas,
+                SUM(planes_estudio_modulos.hta) AS hta,
+                planes_estudio.uc,
+                get_prelaciones(planes_estudio.id) AS prelaciones,
+                resoluciones.resolucion AS resolucion_uc,
+                resoluciones.acta AS acta_uc,
+                resoluciones.fecha AS fecha_uc,
+                view_modulos_ultimas_resoluciones.resolucion AS resolucion_m,
+                view_modulos_ultimas_resoluciones.acta AS acta_m,
+                view_modulos_ultimas_resoluciones.fecha AS fecha_m
+    FROM        carreras,
+                unidades, 
+                niveles, 
+                planes_estudio,
+                planes_estudio_modulos,
+                view_modulos_ultimas_resoluciones,
+                resoluciones
+    WHERE       planes_estudio.carrera_id = carreras.id
+    AND         planes_estudio.nivel_id = niveles.id
+    AND         planes_estudio.unidad_id = unidades.id
+    AND         planes_estudio.id = planes_estudio_modulos.plan_estudio_id
+    AND         planes_estudio.carrera_id = view_modulos_ultimas_resoluciones.carrera_id 
+    AND         planes_estudio.nivel_id = view_modulos_ultimas_resoluciones.nivel_id 
+    AND         planes_estudio.unidad_id = view_modulos_ultimas_resoluciones.unidad_id
+    AND         planes_estudio.resolucion_id = resoluciones.id
+    AND         CASE 
+    				WHEN carrera_id IS NOT NULL THEN planes_estudio.carrera_id = carrera_id
+	                ELSE planes_estudio.carrera_id IS NOT NULL
+                END
+    AND         CASE 
+    				WHEN nivel_id IS NOT NULL THEN planes_estudio.nivel_id = nivel_id
+	                ELSE planes_estudio.nivel_id IS NOT NULL
+                END
+    AND         CASE 
+	    			WHEN resolucion_id IS NOT NULL THEN planes_estudio.resolucion_id = resolucion_id
+	                WHEN resolucion_id IS NULL AND carrera_id IS NOT NULL THEN planes_estudio.resolucion_id = resolucion_id_last
+	            	ELSE planes_estudio.resolucion_id IS NOT NULL
+            	END    			
+    GROUP BY    carreras.carrera, 
+            	niveles.orden, 
+            	unidades.codigo;
+	/*
+	SELECT      planes_estudio.id, 
                 carreras.carrera, 
                 unidades.codigo, 
                 unidades.unidad, 
@@ -902,43 +977,37 @@ BEGIN
     GROUP BY    carreras.carrera, 
             	niveles.orden, 
             	unidades.codigo;
+	*/
 END$$
 DELIMITER ;
 
 # Crear procedimiento almacenado "select_plan_estudio_modulo"
 DROP procedure IF EXISTS select_plan_estudio_modulo;
 DELIMITER $$
-CREATE PROCEDURE select_plan_estudio_modulo (                     
-                    carrera VARCHAR(45), 
-                    codigo VARCHAR(16),
-                    nivel VARCHAR(50), 
-                    fecha_aprobacion DATE)
+CREATE PROCEDURE select_plan_estudio_modulo (plan_estudio_id INT UNSIGNED)
 BEGIN
-    SELECT      modulos.modulo,
+    DECLARE resolucion_id INT UNSIGNED DEFAULT NULL;
+    
+    SELECT      resoluciones.id INTO resolucion_id
+    FROM        planes_estudio_modulos,
+                resoluciones
+    WHERE       planes_estudio_modulos.resolucion_id = resoluciones.id
+    ORDER BY    resoluciones.fecha DESC
+    LIMIT 1;
+
+    SELECT      planes_estudio_modulos.id,
+                modulos.modulo,
                 planes_estudio_modulos.hta / planes_estudio_modulos.htas AS semanas,
                 planes_estudio_modulos.htas,
-                planes_estudio_modulos.hta,			
-                planes_estudio_modulos.fecha_aprobacion 
-    FROM        planes_estudio,
-                planes_estudio_modulos,
-                carreras,
-                niveles,
-                unidades,
+                planes_estudio_modulos.hta,         
+                resoluciones.fecha 
+    FROM        planes_estudio_modulos,
                 modulos,
-                view_modulos_ultimas_fechas_aprobacion AS ultimas_fechas_aprobacion
-    WHERE       unidades.codigo = codigo
-    AND         carreras.carrera = carrera 
-    AND         niveles.nivel = nivel
-    AND         planes_estudio.carrera_id = carreras.id 
-    AND         planes_estudio.nivel_id = niveles.id 
-    AND         planes_estudio.fecha_aprobacion = fecha_aprobacion
-    AND         planes_estudio_modulos.plan_estudio_id = planes_estudio.id 
-    AND         planes_estudio_modulos.modulo_id = modulos.id 
-    AND         planes_estudio.unidad_id = unidades.id
-    AND         ultimas_fechas_aprobacion.carrera_id = planes_estudio.carrera_id 
-    AND         ultimas_fechas_aprobacion.nivel_id = planes_estudio.nivel_id 
-    AND         ultimas_fechas_aprobacion.unidad_id = planes_estudio.unidad_id 
-    AND         ultimas_fechas_aprobacion.fecha_aprobacion = planes_estudio_modulos.fecha_aprobacion 
+                resoluciones
+    WHERE       planes_estudio_modulos.plan_estudio_id = plan_estudio_id 
+    AND         planes_estudio_modulos.modulo_id = modulos.id
+    AND         planes_estudio_modulos.resolucion_id = resoluciones.id
+    AND         resoluciones.id = resolucion_id 
     ORDER BY    modulos.modulo;
 END$$
 DELIMITER ;
@@ -974,7 +1043,8 @@ CREATE PROCEDURE select_planes_estudio_resoluciones (carrera VARCHAR(45))
 BEGIN
     SELECT      *
     FROM        (
-                SELECT      resoluciones.resolucion,
+                SELECT      resoluciones.id,
+                			resoluciones.resolucion,
                             resoluciones.acta,
                             resoluciones.fecha 
                 FROM        planes_estudio, 
@@ -1001,7 +1071,8 @@ CREATE PROCEDURE select_planes_estudio_niveles (
                     acta SMALLINT,
                     fecha DATE)
 BEGIN
-    SELECT      tabla.nivel 
+	/*
+	SELECT      tabla.nivel 
     FROM        (
                 SELECT  DISTINCT(niveles.nivel), 
                         niveles.orden
@@ -1017,6 +1088,28 @@ BEGIN
                 AND     resoluciones.acta = acta
                 AND     resoluciones.fecha = fecha) AS tabla
     ORDER BY    orden ASC;
+    */
+	SELECT      niveles.id,
+				niveles.nivel,
+				niveles.orden 
+	FROM        niveles
+	INNER JOIN	(
+	            SELECT  DISTINCT(niveles.nivel),                 		
+	                    niveles.orden
+	            FROM    planes_estudio,
+	                    carreras,
+	                    niveles,
+	                    resoluciones
+	            WHERE   planes_estudio.carrera_id = carreras.id
+	            AND     planes_estudio.nivel_id = niveles.id
+	            AND     planes_estudio.resolucion_id = resoluciones.id            
+	            AND     carreras.carrera = carrera
+	            AND     resoluciones.resolucion = resolucion
+	            AND     resoluciones.acta = acta
+	            AND     resoluciones.fecha = fecha            
+	            ) AS tabla ON tabla.nivel = niveles.nivel
+	
+	ORDER BY    tabla.orden ASC;
 END$$
 DELIMITER ;
 
@@ -1830,6 +1923,35 @@ BEGIN
 END$$
 DELIMITER ;
 
+# Crear procedimiento almacenado "select_ofertas_academicas_modulos"
+DROP procedure IF EXISTS select_ofertas_academicas_modulos;
+DELIMITER $$
+CREATE PROCEDURE select_ofertas_academicas_modulos (
+					periodo_id INT UNSIGNED,
+					carrera_id INT UNSIGNED,
+					nivel_id INT UNSIGNED,
+					unidad_id INT UNSIGNED)
+BEGIN
+    SELECT 	ofertas_academicas.id,
+			ofertas_academicas.docente_id,
+			ofertas_academicas.periodo_id,
+			ofertas_academicas.plan_estudio_modulo_id,			
+			get_seccion(ofertas_academicas.id_seccion, ofertas_academicas.id_nomenclatura) AS seccion,
+			ofertas_academicas.cupos,
+			ofertas_academicas.id_seccion,
+			ofertas_academicas.id_nomenclatura
+	FROM 	ofertas_academicas,
+			planes_estudio_modulos,
+			planes_estudio
+	WHERE	ofertas_academicas.plan_estudio_modulo_id = planes_estudio_modulos.id 
+	AND 	planes_estudio_modulos.plan_estudio_id = planes_estudio.id
+	AND		ofertas_academicas.periodo_id = periodo_id 
+	AND		planes_estudio.carrera_id = carrera_id
+	AND		planes_estudio.nivel_id = nivel_id
+	AND		planes_estudio.unidad_id = unidad_id;
+END$$
+DELIMITER ;
+
 # Crear procedimiento almacenada "insert_docente"
 /* 	
     NOTA: Usar con transacciones (opcional pero recomendado). 
@@ -2531,6 +2653,42 @@ BEGIN
     AND     tabla_prelaciones.unidad_id = unidades.id
     AND     tabla_materias.id = plan_estudio_id;
 RETURN prelaciones;
+END$$
+DELIMITER ;
+
+## Crear función "get_seccion"
+DROP function IF EXISTS get_seccion;
+DELIMITER $$
+CREATE FUNCTION get_seccion (	
+					id_seccion SMALLINT UNSIGNED,
+					id_nomenclatura SMALLINT UNSIGNED)
+RETURNS VARCHAR(16383)
+DETERMINISTIC
+BEGIN
+	DECLARE seccion VARCHAR(16383) DEFAULT "";
+	DECLARE firstChar INT UNSIGNED DEFAULT NULL;
+	DECLARE numChars INT UNSIGNED DEFAULT NULL;
+	DECLARE id INt DEFAULT 0;
+
+	SET id = id_seccion;
+
+	IF id_nomenclatura = 0 THEN
+		SET firstChar = 65;
+		SET numChars = 26;
+	ELSE
+		SET firstChar = 48;
+		SET numChars = 10;
+	END IF;
+
+	SET seccion = CONCAT(CHAR((id MOD numChars) + firstChar), seccion);
+	
+	WHILE id >= numChars DO
+		SET id = (id DIV numChars) - 1;
+	
+		SET seccion = CONCAT(CHAR((id MOD numChars) + firstChar), seccion);
+	END WHILE;
+	
+RETURN seccion;
 END$$
 DELIMITER ;
 

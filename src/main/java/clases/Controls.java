@@ -57,7 +57,7 @@ public final class Controls {
      * @param itemInicial Primer ítem de la lista. Asigne null para omitir este
      * ítem.
      */
-    public static void fillComboBox(
+    public static void fillComboBoxString(
             JComboBox comboBox,
             ArrayList<String> arrayList,
             String itemInicial) {
@@ -66,6 +66,21 @@ public final class Controls {
 
         if (itemInicial != null) {
             comboBox.addItem(itemInicial);
+        }
+
+        arrayList.forEach(e -> {
+            comboBox.addItem(e);
+        });
+    }
+    
+    public static void fillComboBoxItem(
+            JComboBox comboBox,
+            ArrayList<Item> arrayList,
+            String itemInicial){
+        comboBox.removeAllItems();
+
+        if (itemInicial != null) {
+            comboBox.addItem(new Item(null,itemInicial));
         }
 
         arrayList.forEach(e -> {
@@ -166,6 +181,16 @@ public final class Controls {
         }
     }
 
+    public static void removeAllRowsTable(JTable table){
+        DefaultTableModel dtm;
+
+        dtm = (DefaultTableModel) table.getModel();
+               
+        while(dtm.getRowCount() > 0){
+            dtm.removeRow(dtm.getRowCount() - 1);
+        }
+    }
+    
     public static boolean isValid(Object control, Verificar... verificar) {
         String s;
         char c;

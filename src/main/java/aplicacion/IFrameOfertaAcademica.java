@@ -16,22 +16,26 @@
  */
 package aplicacion;
 
+import clases.Carrera;
 import clases.ComboBoxEditor;
 import clases.Controls;
 import clases.Docente;
-import clases.Materia;
+import clases.Item;
+import clases.Modulo;
+import clases.Nivel;
+import clases.OfertaAcademica;
+import clases.Unidad;
 import clases.Periodo;
 import clases.Queries;
 import clases.Resolucion;
 import clases.SpinnerEditor;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
-import javax.swing.AbstractButton;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
@@ -39,14 +43,15 @@ import javax.swing.table.TableColumnModel;
 
 /**
  *
- * @author roger
+ * @author Roger Lovera <rloverab@yahoo.es>
  */
 public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
 
-    private Queries queries;
+    private final Queries queries;
     private Resolucion resolucion;
-    private ArrayList<Docente> docentes;
-
+    private final ArrayList<Docente> docentes;
+    private ArrayList<OfertaAcademica> ofertasAcademicas;
+    
     /**
      * Creates new form VentanaOfertaAcademica
      *
@@ -54,78 +59,97 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
      */
     public IFrameOfertaAcademica(Queries queries) {
         initComponents();
+        ofertasAcademicas = new ArrayList<>();
         this.queries = queries;
 
         docentes = queries.getDocentes(true);
         fillComboBoxPeriodo();
         prepareTableSecciones();
-        getSeccion(0, false);
+        prepareTableModulos();
     }    
 
     private void fillComboBoxPeriodo() {
         ArrayList<Periodo> periodos;
-        ArrayList<String> items;
+        ArrayList<Item> items;
 
         periodos = queries.getPeriodos();
         items = new ArrayList<>();
 
         periodos.forEach(periodo -> {
-            items.add(periodo.getPeriodo());
+            items.add(new Item(periodo));
         });
 
-        Controls.fillComboBox(cbxPeriodo, items, null);
+        Controls.fillComboBoxItem(cbxPeriodo, items, null);
 
         cbxPeriodo.setSelectedIndex(-1);
         cbxPeriodo.setEnabled(cbxPeriodo.getItemCount() > 0);
     }
 
     private void fillComboBoxCarrera() {
+        ArrayList<Item> items;
+        ArrayList<Carrera> carreras;
+        
         cbxCarrera.removeAllItems();
         if (cbxPeriodo.getSelectedIndex() >= 0) {
-            Controls.fillComboBox(cbxCarrera, queries.getCarreras(), null);
+            items = new ArrayList<>();            
+            carreras =  queries.getCarreras();           
+            
+            carreras.forEach(carrera -> items.add(new Item(carrera)));
+                    
+            Controls.fillComboBoxItem(cbxCarrera, items, null);
         }
+        
         cbxCarrera.setSelectedIndex(-1);
         cbxCarrera.setEnabled(cbxCarrera.getItemCount() > 0);
     }
 
     private void fillComboBoxNivel() {
+        ArrayList<Item> items;
+        ArrayList<Nivel> niveles;
+        
         cbxNivel.removeAllItems();
-        if (resolucion != null && cbxCarrera.getSelectedIndex() >= 0) {
-            Controls.fillComboBox(
-                    cbxNivel,
-                    queries.getNiveles(
-                            (String) cbxCarrera.getSelectedItem(),
-                            resolucion.getResolucion(),
-                            resolucion.getActa(),
-                            resolucion.getFecha()),
-                    null);
+        if(resolucion != null && cbxCarrera.getSelectedIndex() >= 0){
+            items = new ArrayList<>();
+            niveles = queries.getNiveles(
+                    ((Item) cbxCarrera.getSelectedItem()).getLabel(),
+                    resolucion.getResolucion(),
+                    resolucion.getActa(),
+                    resolucion.getFecha());
+            niveles.forEach(nivel -> items.add(new Item(nivel)));
+            
+            Controls.fillComboBoxItem(cbxNivel, items, null);
         }
+        
         cbxNivel.setSelectedIndex(-1);
         cbxNivel.setEnabled(cbxNivel.getItemCount() > 0);
     }
 
-    private void fillComboBoxMateria() {
-        ArrayList<String> arrayList;
-        ArrayList<Materia> materias;
-
-        arrayList = new ArrayList<>();
-
+    private void fillComboBoxMateria() {        
+        ArrayList<Unidad> unidades;
+        ArrayList<Item> items;
+        Carrera carrera;
+        Nivel nivel;
+        
         cbxMateria.removeAllItems();
-        if (cbxNivel.getSelectedIndex() >= 0) {
-            materias = queries.getPlanEstudio2(
-                    (String) cbxCarrera.getSelectedItem(),
-                    (String) cbxNivel.getSelectedItem(),
-                    resolucion.getResolucion(),
-                    resolucion.getActa(),
-                    resolucion.getFecha());
-
-            if (materias.size() > 0) {
-                materias.forEach(materia -> {
-                    arrayList.add(materia.toString());
+        
+        if (cbxCarrera.getItemCount() >= 0 && cbxNivel.getSelectedIndex() >= 0) {            
+            carrera = (Carrera) ((Item) cbxCarrera.getSelectedItem()).getValue();      
+            nivel = (Nivel) ((Item) cbxNivel.getSelectedItem()).getValue();
+            
+            unidades = queries.getPlanEstudio3(
+                    carrera.getId(),
+                    nivel.getId(),
+                    resolucion.getId());
+            
+            if (unidades.size() > 0) {
+                items = new ArrayList<>();
+                
+                unidades.forEach(materia -> {                    
+                    items.add(new Item(materia));
                 });
-                Controls.fillComboBox(
+                Controls.fillComboBoxItem(
                         cbxMateria,
-                        arrayList,
+                        items,
                         null);
             }
         }
@@ -133,48 +157,119 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxMateria.setEnabled(cbxMateria.getItemCount() > 0);
     }
 
-    private void addRow() {
-        DefaultTableModel dtm;
-
+    private void fillTableSecciones(){
+        DefaultTableModel dtm;        
+        
         dtm = (DefaultTableModel) tblSecciones.getModel();
+        
+        Controls.removeAllRowsTable(tblSecciones);
+        
+        ofertasAcademicas.forEach(ofertaAcademica -> {
+            Object[] objects;            
+            objects = new Object[] {                
+                ofertaAcademica.getSeccion(),
+                ofertaAcademica.getCupos()
+            };
+            
+            dtm.addRow(objects);
+        });        
+    }
+    
+    private void fillTableModulos(){
+        DefaultTableModel dtm;
+        int index;
+        
+        Controls.removeAllRowsTable(tblModulos);
+        dtm = (DefaultTableModel) tblModulos.getModel();
+        index = tblSecciones.getSelectedRow();      
+                
+        if(index >= 0){
+            ofertasAcademicas.get(index).getModulos().forEach(modulo -> {
+                Object[] objects;
+                String fullname;
+                
+                fullname = null;
 
-        dtm.addRow(new Object[]{null, getSeccion(dtm.getRowCount(), cbxSecciones.getSelectedIndex() == 1), null, null});
+                for (Docente docente : docentes){
+                    if(docente.getDocenteId() == modulo.getDocente_id()){
+                        fullname = docente.toString();
+                        break;
+                    }
+                }
+                objects = new Object[]{
+                    modulo.getId(),
+                    modulo.getModulo(),
+                    fullname};
+                
+                dtm.addRow(objects);
+            });
+        }
+    }
+    
+    private OfertaAcademica.Nomenclatura getNomenclatura(){
+        switch(cbxSecciones.getSelectedIndex()){
+            case 0:
+                return OfertaAcademica.Nomenclatura.ALFABETICO;
+            default:
+                return OfertaAcademica.Nomenclatura.NUMERICO;
+        }
+    }
+    
+    private void addRow() {
+        Unidad unidad;
+        ArrayList<Modulo> modulos;
+        Periodo periodo;        
+        OfertaAcademica ofertaAcademica;
+        
+        modulos = new ArrayList<>();
+        
+        periodo = (Periodo) ((Item)cbxPeriodo.getSelectedItem()).getValue();
+        unidad = (Unidad) ((Item)cbxMateria.getSelectedItem()).getValue();                
+        unidad.getModulos().forEach(modulo -> {
+            try {
+                modulos.add((Modulo) modulo.clone());
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(IFrameOfertaAcademica.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        
+        ofertaAcademica = new OfertaAcademica(
+                0, 
+                periodo.getId(),
+                0 , 
+                1, 
+                modulos, 
+                ofertasAcademicas.size(), 
+                getNomenclatura());
+        ofertasAcademicas.add(ofertaAcademica);
+        
+        fillTableSecciones();
     }
 
     private void removeRow() {
-        DefaultTableModel dtm;
-
-        dtm = (DefaultTableModel) tblSecciones.getModel();
-
-        if (dtm.getRowCount() > 0) {
-            dtm.removeRow(dtm.getRowCount() - 1);
+        if(ofertasAcademicas.size() > 0){
+            ofertasAcademicas.remove(ofertasAcademicas.size() - 1);
         }
+        
+        fillTableSecciones();
     }
 
     private void prepareTableSecciones() {
         DefaultTableModel dtm;
         TableColumnModel tcm;
         TableColumnModel tcmh;
+        DefaultListSelectionModel dlsm; 
         int[] width;
-        String[] items;
 
         dtm = (DefaultTableModel) tblSecciones.getModel();
         tcm = tblSecciones.getColumnModel();
-        tcmh = tblSecciones.getTableHeader().getColumnModel();
-        width = new int[]{0, 60, 60};
-        //items = new String[] {"ROGER LOVERA", "ROSIRYS BONILLA", "JUAN CARLOS LOVERA"};
+        tcmh = tblSecciones.getTableHeader().getColumnModel();        
+        dlsm = (DefaultListSelectionModel) tblSecciones.getSelectionModel();
+        width = new int[]{60};
 
-        items = new String[docentes.size()];
-
-        for (int i = 0; i < docentes.size(); i++) {
-            items[i] = docentes.get(i).toString();
-        }
-
-        tcm.getColumn(2).setCellEditor(new SpinnerEditor(1, 1, 100, 1));
-        tcm.getColumn(3).setCellEditor(new ComboBoxEditor(items));
-        tblSecciones.setRowHeight(21);
-
-        dtm.getDataVector().removeAllElements();
+        tcm.getColumn(1).setCellEditor(new SpinnerEditor(1, 1, 100, 1));
+        tblSecciones.setRowHeight(21);        
+        Controls.removeAllRowsTable(tblSecciones);
 
         for (int i = 0; i < width.length; i++) {
             if (width[i] >= 0) {
@@ -190,53 +285,122 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         dtm.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
+                OfertaAcademica ofertaAcademica;
                 btnBorrar.setEnabled(dtm.getRowCount() > 0);
+                
+                if (ofertasAcademicas.size() > 0) {
+                    for (int i = 0; i < dtm.getRowCount(); i++) {
+                        ofertaAcademica = ofertasAcademicas.get(i);
+                        ofertaAcademica.setNumeroSeccion(i);
+                        ofertaAcademica.setCupos((int) dtm.getValueAt(i, 1));
+                        ofertaAcademica.setNomenclatura(getNomenclatura());
+                    }                    
+                }                 
+            }
+        });
+        
+        dlsm.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                fillTableModulos();                
             }
         });
 
-        btnBorrar.setEnabled(dtm.getRowCount() > 0);
+        btnBorrar.setEnabled(dtm.getRowCount() > 0);        
     }
 
-    private void cleanTableSecciones() {
+    private void prepareTableModulos(){
         DefaultTableModel dtm;
-
-        dtm = (DefaultTableModel) tblSecciones.getModel();
-
-        //dtm.getDataVector().removeAllElements();
+        TableColumnModel tcm;
+        TableColumnModel tcmh;
+        int[] width;
+        String[] items;
         
-        for(int i = dtm.getRowCount() - 1; i >= 0; i--){
-            dtm.removeRow(i);
+        dtm = (DefaultTableModel) tblModulos.getModel();
+        tcm = tblModulos.getColumnModel();
+        tcmh = tblModulos.getTableHeader().getColumnModel();        
+        width = new int[]{0, 200};
+        items = new String[docentes.size()];
+        
+        for (int i = 0; i < docentes.size(); i++) {
+            items[i] = docentes.get(i).toString();
         }
         
+        tcm.getColumn(2).setCellEditor(new ComboBoxEditor(items));
+        tblModulos.setRowHeight(21);  
         
+        //removeAllRowsTableModule();
+        Controls.removeAllRowsTable(tblModulos);
+
+        for (int i = 0; i < width.length; i++) {
+            if (width[i] >= 0) {
+                tcmh.getColumn(i).setMaxWidth(width[i]);
+                tcmh.getColumn(i).setMinWidth(width[i]);
+                tcmh.getColumn(i).setPreferredWidth(width[i]);
+                tcm.getColumn(i).setMaxWidth(tcmh.getColumn(i).getMaxWidth());
+                tcm.getColumn(i).setMinWidth(tcmh.getColumn(i).getMinWidth());
+                tcm.getColumn(i).setPreferredWidth(tcmh.getColumn(i).getPreferredWidth());
+            }
+        }
+        
+        dtm.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                OfertaAcademica ofertaAcademica;                
+                int index;
+                
+                if (tblModulos.getRowCount() > 0) {
+                    index = tblSecciones.getSelectedRow();
+                    if (index >= 0) {
+                        ofertaAcademica = ofertasAcademicas.get(index);
+                        if (tblModulos.getRowCount() == ofertaAcademica.getModulos().size()) {
+                            for(int i = 0; i < ofertaAcademica.getModulos().size(); i++){                                
+                                ofertaAcademica
+                                        .getModulos()
+                                        .get(i)
+                                        .setDocente_id(tblModulos.getValueAt(i, 2) == null ? -1 : getDocenteId(tblModulos.getValueAt(i, 2).toString()));                                
+                            }
+                        }
+                    }
+                }                
+            }
+        });
     }
+    
+    private int getDocenteId(String fullname){
+        int id;
+        id = -1;
         
-    private String getSeccion(int id, boolean numerico){
-        int seccion = id;
-        int a = (int) 'A';
-        int z = (int) 'Z';       
+        for(Docente docente : docentes){
+            if(docente.toString().equalsIgnoreCase(fullname)){
+                id = docente.getDocenteId();
+                break;
+            }
+        }
         
-        ArrayList<String> letras = new ArrayList<>();
-        ArrayList<String> letrasAux = new ArrayList<>();
+        return id;
+    }
+    
+    private void updateSecciones(){
+        boolean enabled;
+        DefaultTableModel dtm;
         
-        for(int i = a; i <= z; i++){
-            letras.add(Character.toString(i));            
-        }        
+        enabled = cbxSecciones.getSelectedIndex() >= 0;
         
-        if(numerico){
-            return String.format("%d", seccion + 1);
-        }else{                        
-            letrasAux.add(letras.get(seccion % letras.size()));
+        btnAgregar.setEnabled(enabled);
+        tblSecciones.setEnabled(enabled);
+        
+        if(!enabled){
+            Controls.removeAllRowsTable(tblSecciones);
+        }else{
+            dtm = (DefaultTableModel) tblSecciones.getModel();
             
-            while(seccion >= letras.size()){                 
-                seccion = (seccion / letras.size()) - 1;
-                letrasAux.add(letras.get(seccion % letras.size()));                
-            }            
-            
-            Collections.reverse(letrasAux);
-            
-            return String.join("",letrasAux);            
-        }        
+            for(int i = 0; i < ofertasAcademicas.size(); i++){             
+                ofertasAcademicas.get(i).setNomenclatura(getNomenclatura());
+                dtm.setValueAt(ofertasAcademicas.get(i).getSeccion(), i, 0);
+                
+            }
+        }
     }
 
     /**
@@ -262,10 +426,19 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxSecciones = new javax.swing.JComboBox<>();
         btnGuardar = new javax.swing.JButton();
         btnCancelar = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblSecciones = new javax.swing.JTable();
-        btnAgregar = new javax.swing.JButton();
         btnBorrar = new javax.swing.JButton();
+        btnAgregar = new javax.swing.JButton();
+        jPanel4 = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        tblModulos = new javax.swing.JTable();
+        jPanel6 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
 
         setTitle("Oferta académica");
 
@@ -277,6 +450,11 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxPeriodo.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 cbxPeriodoItemStateChanged(evt);
+            }
+        });
+        cbxPeriodo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cbxPeriodoActionPerformed(evt);
             }
         });
 
@@ -400,22 +578,21 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             }
         });
 
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Secciones"));
+
         tblSecciones.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+
             },
             new String [] {
-                "ID", "Sección", "Cupos", "Docente"
+                "Sección", "Cupos"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class, java.lang.Object.class
+                java.lang.String.class, java.lang.Integer.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, true, true
+                false, true
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -430,14 +607,6 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         tblSecciones.getTableHeader().setReorderingAllowed(false);
         jScrollPane1.setViewportView(tblSecciones);
 
-        btnAgregar.setText("+");
-        btnAgregar.setToolTipText("Agregar sección");
-        btnAgregar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnAgregarActionPerformed(evt);
-            }
-        });
-
         btnBorrar.setText("-");
         btnBorrar.setToolTipText("Eliminar sección");
         btnBorrar.addActionListener(new java.awt.event.ActionListener() {
@@ -446,6 +615,129 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             }
         });
 
+        btnAgregar.setText("+");
+        btnAgregar.setToolTipText("Agregar sección");
+        btnAgregar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAgregarActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(btnBorrar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnAgregar, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addContainerGap())
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(btnAgregar)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnBorrar)
+                        .addGap(0, 29, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+
+        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Módulos"));
+
+        tblModulos.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null},
+                {null, null, null},
+                {null, null, null},
+                {null, null, null}
+            },
+            new String [] {
+                "ID", "Módulo", "Docente"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.Integer.class, java.lang.String.class, java.lang.Object.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, true
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tblModulos.getTableHeader().setResizingAllowed(false);
+        tblModulos.getTableHeader().setReorderingAllowed(false);
+        jScrollPane2.setViewportView(tblModulos);
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 85, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        jPanel6.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Información"));
+
+        jLabel1.setText("Secciones:");
+
+        jLabel2.setText("Cupos:");
+
+        jLabel3.setText("jLabel3");
+
+        jLabel4.setText("jLabel4");
+
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel4)
+                    .addComponent(jLabel3))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel3))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel4))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -453,22 +745,21 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(33, 33, 33)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(btnCancelar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnGuardar))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(33, 33, 33)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(btnBorrar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnAgregar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -478,14 +769,13 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnAgregar)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnBorrar))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(12, 12, 12)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnGuardar)
                     .addComponent(btnCancelar))
@@ -500,12 +790,12 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void cbxCarreraItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxCarreraItemStateChanged
-        if (cbxCarrera.getSelectedIndex() >= 0) {
-            resolucion = queries.getResoluciones((String) cbxCarrera.getSelectedItem(), 1).get(0);
+        if (cbxCarrera.getSelectedIndex() >= 0) {            
+            resolucion = queries.getResoluciones(((Item)cbxCarrera.getSelectedItem()).toString(),1).get(0);
         } else {
             resolucion = null;
         }
-        fillComboBoxNivel();
+        fillComboBoxNivel();        
     }//GEN-LAST:event_cbxCarreraItemStateChanged
 
     private void cbxPeriodoItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxPeriodoItemStateChanged
@@ -530,30 +820,44 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         enabled = cbxMateria.getSelectedIndex() >= 0;
         
         if(!enabled){
-            cbxSecciones.setSelectedIndex(-1);
+            cbxSecciones.setSelectedIndex(-1);            
+        }else{
+            if (cbxPeriodo.getSelectedIndex() >= 0 && cbxCarrera.getSelectedIndex() >= 0 && cbxNivel.getSelectedIndex() >= 0 && cbxMateria.getSelectedIndex() >= 0) {
+                ofertasAcademicas = queries.getOfertasAcademicas(
+                        ((Periodo) ((Item) cbxPeriodo.getModel().getSelectedItem()).getValue()).getId(),
+                        ((Carrera) ((Item) cbxCarrera.getModel().getSelectedItem()).getValue()).getId(),
+                        ((Nivel) ((Item) cbxNivel.getModel().getSelectedItem()).getValue()).getId(),
+                        ((Unidad) ((Item) cbxMateria.getModel().getSelectedItem()).getValue()).getId());
+                
+                if (ofertasAcademicas.size() > 0) {
+                    switch(ofertasAcademicas.get(0).getNomenclatura()){
+                        case ALFABETICO:
+                            cbxSecciones.setSelectedIndex(0);
+                            break;
+                        default:
+                            cbxSecciones.setSelectedIndex(1);
+                    }
+                    
+                    
+                    //cbxSecciones.setSelectedIndex(ofertasAcademicas.get(0).getNomenclatura());
+                    fillTableSecciones();
+                } else {
+                    cbxSecciones.setSelectedIndex(0);
+                }
+            }            
         }
         
+        //fillTableSecciones();
         cbxSecciones.setEnabled(enabled);
     }//GEN-LAST:event_cbxMateriaItemStateChanged
 
     private void cbxSeccionesItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxSeccionesItemStateChanged
-        boolean enabled;
-        DefaultTableModel dtm;
-        
-        enabled = cbxSecciones.getSelectedIndex() >= 0;
-        
-        btnAgregar.setEnabled(enabled);
-        tblSecciones.setEnabled(enabled);
-        
-        if(!enabled){
-            cleanTableSecciones();
-        }else{
-            dtm = (DefaultTableModel) tblSecciones.getModel();
-            for(int i = 0; i < dtm.getRowCount(); i++){
-                dtm.setValueAt(getSeccion(i, cbxSecciones.getSelectedIndex() == 1), i, 1);
-            }
-        }
+        updateSecciones();
     }//GEN-LAST:event_cbxSeccionesItemStateChanged
+
+    private void cbxPeriodoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxPeriodoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_cbxPeriodoActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregar;
@@ -565,14 +869,23 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     private javax.swing.JComboBox<String> cbxNivel;
     private javax.swing.JComboBox<String> cbxPeriodo;
     private javax.swing.JComboBox<String> cbxSecciones;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JLabel lblCarrera;
     private javax.swing.JLabel lblMateria;
     private javax.swing.JLabel lblNivel;
     private javax.swing.JLabel lblPeriodo;
     private javax.swing.JLabel lblSecciones;
+    private javax.swing.JTable tblModulos;
     private javax.swing.JTable tblSecciones;
     // End of variables declaration//GEN-END:variables
 }

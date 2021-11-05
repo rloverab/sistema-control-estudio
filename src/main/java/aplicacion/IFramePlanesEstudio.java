@@ -16,8 +16,10 @@
  */
 package aplicacion;
 
+import clases.Carrera;
 import clases.Queries;
 import clases.Controls;
+import clases.Item;
 import clases.Reports;
 import clases.Resolucion;
 import java.util.ArrayList;
@@ -29,8 +31,8 @@ import javax.swing.table.DefaultTableModel;
  * @author Roger Lovera
  */
 public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
-    private final Queries consultas;
-    private final Reports reportes;
+    private final Queries queries;
+    private final Reports reports;
     private ArrayList<Resolucion> resoluciones;    
 
     /**
@@ -44,8 +46,8 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
             Reports reportes) {
         initComponents();
         resoluciones = null;
-        this.consultas = consultas;
-        this.reportes = reportes;
+        this.queries = consultas;
+        this.reports = reportes;
 
         if (consultas != null) {
             fillComboBoxCarreras();
@@ -64,9 +66,17 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
     //Getters
     //Actions
     private void fillComboBoxCarreras() {
-        Controls.fillComboBox(
+        ArrayList<Item> items;
+        ArrayList<Carrera> carreras;
+        
+        items = new ArrayList<>();
+        carreras = queries.getCarreras();
+        
+        carreras.forEach(carrera -> items.add(new Item(carrera)));
+        
+        Controls.fillComboBoxItem(
                 cbxCarreras,
-                consultas.getCarreras(),
+                items,
                 "Seleccione...");
     }
 
@@ -74,7 +84,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         cbxAprobaciones.removeAllItems();
         cbxAprobaciones.addItem("Seleccione...");
 
-        resoluciones = consultas.getResoluciones(cbxCarreras.getSelectedItem().toString());
+        resoluciones = queries.getResoluciones(cbxCarreras.getSelectedItem().toString());
 
         resoluciones.forEach(e -> {
             cbxAprobaciones.addItem(e.toString());
@@ -84,16 +94,24 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
     private void fillComboBoxNiveles() {        
         int index;
         index = cbxAprobaciones.getSelectedIndex() - 1;
+        ArrayList<String> niveles;
+        
+        
+        
+        
 
         if (index >= 0) {
-            Controls.fillComboBox(
-                    cbxNiveles,
-                    consultas.getNiveles(
-                            cbxCarreras.getSelectedItem().toString(),
+            niveles = new ArrayList<>();
+            queries.getNiveles(cbxCarreras.getSelectedItem().toString(),
                             resoluciones.get(index).getResolucion(),
                             resoluciones.get(index).getActa(),
-                            resoluciones.get(index).getFecha()),
-                    "Todos");
+                            resoluciones.get(index).getFecha()).forEach(nivel -> {
+                                niveles.add(nivel.getNivel());
+                            });
+            Controls.fillComboBoxString(
+                    cbxNiveles,
+                    niveles,
+                    "Todos");            
         }
 
     }
@@ -102,18 +120,18 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         String[] header = {"id", "Código", "Unidad", "HTA", "HTAS", "UC"};        
         int[] widths = {0, 140, -1, 40, 50, 40};
         int index;
-        ArrayList<Object[]> rows;
+        ArrayList<Object[]> rows;        
         
         index = cbxAprobaciones.getSelectedIndex() - 1;
         rows = null;
         
-        if(cbxNiveles.getSelectedIndex() >= 0){
-            rows = consultas.getPlanEstudio(
+        if(cbxNiveles.getSelectedIndex() >= 0){            
+            rows = queries.getPlanEstudio(
                     cbxCarreras.getSelectedItem().toString(),
                     cbxNiveles.getSelectedIndex() > 0 ? cbxNiveles.getSelectedItem().toString() : null,
                     resoluciones.get(index).getResolucion(),
                     resoluciones.get(index).getActa(),
-                    resoluciones.get(index).getFecha());
+                    resoluciones.get(index).getFecha());            
         }
         
         Controls.fillTable(
@@ -137,7 +155,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         nivel = cbxNiveles.getSelectedIndex() > 0 ? cbxNiveles.getSelectedItem().toString() : null;
         index = cbxAprobaciones.getSelectedIndex() - 1;
         
-        reportes.generateReportPlanEstudio(
+        reports.generateReportPlanEstudio(
                 carrera, 
                 nivel, 
                 resoluciones.get(index).getResolucion(), 
