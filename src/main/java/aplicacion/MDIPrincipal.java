@@ -16,8 +16,8 @@
  */
 package aplicacion;
 
-import clases.Consultas;
-import clases.Reportes;
+import clases.Queries;
+import clases.Reports;
 import java.beans.PropertyVetoException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,16 +30,16 @@ import servicios.ConnectionDB;
  *
  * @author Roger Lovera
  */
-public class VentanaPrincipalApp extends javax.swing.JFrame {
+public class MDIPrincipal extends javax.swing.JFrame {
 
     private final ConnectionDB conn;
-    private final Consultas consultas;
-    private final Reportes reportes;
+    private final Queries queries;
+    private final Reports reports;
 
     /**
      * Creates new form VentanaPrincipal
      */
-    public VentanaPrincipalApp() {
+    public MDIPrincipal() {
         initComponents();
         conn = new ConnectionDB(
                 "localhost",
@@ -49,8 +49,8 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
                 "scedb");
         conn.open();
 
-        consultas = new Consultas(conn);
-        reportes = new Reportes(conn);
+        queries = new Queries(conn);
+        reports = new Reports(conn);
 
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
@@ -68,7 +68,7 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
                     try {
                         frame.setSelected(true);
                     } catch (PropertyVetoException ex) {
-                        Logger.getLogger(VentanaPrincipalApp.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(MDIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     return;
                 }
@@ -181,7 +181,11 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
         menuAdministracion.add(itemInscripcion_Admin);
 
         itemOfertaAcademica1.setText("Oferta académica");
-        itemOfertaAcademica1.setEnabled(false);
+        itemOfertaAcademica1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                itemOfertaAcademica1ActionPerformed(evt);
+            }
+        });
         menuAdministracion.add(itemOfertaAcademica1);
 
         itemAjusteInscripcion.setText("Ajustes de inscripción");
@@ -377,28 +381,34 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
 
     private void itemAlumnosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemAlumnosActionPerformed
         abrirVentana(
-                new VentanaEstudiantes(consultas), 
+                new IFrameEstudiantes(queries), 
                 false);
     }//GEN-LAST:event_itemAlumnosActionPerformed
 
     private void itemPensumActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemPensumActionPerformed
         abrirVentana(
-                new VentanaPlanesEstudio(consultas, reportes),
+                new IFramePlanesEstudio(queries, reports),
                 false);
 
     }//GEN-LAST:event_itemPensumActionPerformed
 
     private void itemPeriodosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemPeriodosActionPerformed
         abrirVentana(
-                new VentanaPeriodos(conn),
+                new IFramePeriodos(queries),
                 false);
     }//GEN-LAST:event_itemPeriodosActionPerformed
 
     private void itemDocentesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemDocentesActionPerformed
         abrirVentana(
-                new VentanaDocentes(conn), 
+                new IFrameDocentes(conn), 
                 false);
     }//GEN-LAST:event_itemDocentesActionPerformed
+
+    private void itemOfertaAcademica1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_itemOfertaAcademica1ActionPerformed
+        abrirVentana(
+                new IFrameOfertaAcademica(queries),
+                false);
+    }//GEN-LAST:event_itemOfertaAcademica1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -417,14 +427,26 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(VentanaPrincipalApp.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MDIPrincipal.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(VentanaPrincipalApp.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MDIPrincipal.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(VentanaPrincipalApp.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MDIPrincipal.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(VentanaPrincipalApp.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(MDIPrincipal.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
         //</editor-fold>
         //</editor-fold>
         //</editor-fold>
@@ -433,7 +455,7 @@ public class VentanaPrincipalApp extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new VentanaPrincipalApp().setVisible(true);
+                new MDIPrincipal().setVisible(true);
             }
         });
     }

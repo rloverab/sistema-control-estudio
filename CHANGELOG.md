@@ -1,5 +1,71 @@
 # ChangeLog
 Registros de cambios realizados en el proyecto Sistema de Control de Estudios.
+## [0.0.3] - 2021-11-25
+### Añadido
+- Clase IFrameOfertaAcademica.
+- Clase SpinnerEditor.
+- Clase ComboBoxEditor.
+- Clase Periodo.
+- Clase Carrera.
+- Clase Item.
+- Clase Modulo.
+- Clase Nivel.
+- Clase OfertaAcademica.
+- Método toString a la clase Persona.
+- Método getPeriodos a la clase Queries.
+- Método insertPeriodo a la clase Queries.
+- Método updatePeriodo a la clase Queries.
+- Método getOfertasAcademicas a la clase Queries.
+- Método addRow a la clase IFrameOfertaAcademica.
+- Método removeRow a la clase IFrameOfertaAcademica.
+- Método prepareTableSecciones a la clase IFrameOfertaAcademica.
+- Método cleanTableSecciones a la clase IFrameOfertaAcademica.
+- Método prepareTablePlanEstudio a la clase IFrameOfertaAcademica.
+- Método fillComboBoxItem a la clase Controls.
+- Método toString a la clase Periodo.
+- Método hashCode e equals en la clase Módulo.
+- Método hashCode e equals en la clase OfertaAcademica.
+- Método hashCode e equals en la clase OfertaAcademicaModulo.
+- Procedimiento insert_sexo a la base de datos.
+- Procedimiento insert_estado civil a la base de datos.
+- Procedimiento select_docentes a la base de datos.
+- Procedimiento select_ofertas_academicas_modulos a la base de datos.
+- Procedimiento get_seccion a la base de datos.
+- Procedimiento update_ofertas_academicas_modulos a la base de datos.
+- Procedimiento insert_oferta_academica a la base de datos.
+
+### Modificado
+- Renombrada clase VentanaDocentes a IFrameDocentes.
+- Renombrada clase VentanaEstudiantes a IFrameEstudiantes.
+- Renombrada clase VentanaPeriodos a IFramePeriodos.
+- Renombrada clase VentanaPlanesEstudio a IFramePlanesEstudio.
+- Renombrada clase VentanaPrincipalApp a MDIPrincipal.
+- Renombrada clase Consultas a Queries.
+- Renombrada clase Reportes a Reports.
+- Renombrada clase Materia a Unidad.
+- Clase Resolucion.
+- Renombrado método fillComboBox a fillComboBoxString en la clase Controls.
+- Parámetro del constructor de la clase IFramePeriodos.
+- Tabla ofertas_academicas de la base de datos.
+- Procedimiento select_plan_estudio_modulo de la base de datos.
+- Procedimiento select_planes_estudio_niveles de la base datos.
+- Procedimiento select_planes_estudio_resoluciones de la base de datos.
+- Método getCarreras de la clase Queries.
+- Método getResoluciones de la clase Queries.
+- Método getNiveles de la clase Queries.
+- Método getPlanEstudio de la clase Queries.
+- Método removeAllRowsTable de la clase Controls.
+- Método generateReportPlanEstudio de la clase Reports.
+
+### Eliminado
+- Método insertPeriodo de la clase IFramePeriodos.
+- Método updatePeriodo de la clase IFramePeriodos.
+- Atributos de clase ConnectionDB en la clase IFramePeriodos.
+- Atributos de clase ResultSet en la clase IFramePeriodos.
+
+### Corregido
+- Versión del motor de base de datos en README.md
+
 ## [0.0.2] - 2021-08-26
 ### Añadido
 - Generación de reportes en la clase VentanaPlanesEstudio.

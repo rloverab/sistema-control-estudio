@@ -17,7 +17,6 @@
 package clases;
 
 import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -25,15 +24,21 @@ import java.time.format.DateTimeFormatter;
  * @author Roger Lovera <roger.lovera>
  */
 public class Resolucion {
+    private final int id;
     private final int resolucion;
     private final int acta;
     private final Date fecha;
 
-    public Resolucion(int resolucion, int acta, Date fecha) {
+    public Resolucion(int id, int resolucion, int acta, Date fecha) {
+        this.id = id;
         this.resolucion = resolucion;
         this.acta = acta;
         this.fecha = fecha;
-    }    
+    }
+
+    public int getId() {
+        return id;
+    }
     
     public int getResolucion() {
         return resolucion;
@@ -49,7 +54,6 @@ public class Resolucion {
     
     @Override
     public String toString() {        
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         return String.format(
                 "Resolución: Nº %d - Acta: Nº %d - Fecha: %s", 
                 resolucion,

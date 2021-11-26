@@ -36,7 +36,7 @@ Durante el desarrollo se está tomado en consideración el régimen académico v
 ## Herramientas
 - Kit de desarrollo: OpenJDK 11.
 - Entorno de ejecución: OpenJRE 11.
-- Motor de base de datos: MariaDB 15.1.
+- Motor de base de datos: MariaDB 10.3.
 - Entorno de desarrollo: Apache Netbeans 12.0 LTS.
 - Diseño de base de datos: DBeaver Community Edition 21.
 - Diseño de reportes: Jaspersoft Studio Community Edition 6.

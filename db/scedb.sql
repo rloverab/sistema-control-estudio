@@ -2,25 +2,26 @@
 Script de creación de la base de datos para el 
 Sistema de Control de Estudios del CUR May Hamilton
 
-Autor: Roger Lovera
+Autor: Roger Lovera <rloverab@yahoo.es>
 
 Creado: 09/02/2021
-Actualizado: 17/08/2021
+Actualizado: 25/11/2021
 **************************************************/
 
 # Borrar base de datos "scedb" (sólo si existe)
 /*
-    NOTA: Esta sentencia borra la base de datos existente
-    con todo y registros. Solo para fines de pruebas y desarrollo.
+    NOTA: Esta sentencia borra la base de datos existente.
+    
+    Solo para fines de pruebas y desarrollo.
 
     Usar con precaución.
 
     Está sentencia está comentada por defecto(#)
 */
-DROP DATABASE IF EXISTS scedb;
+#DROP DATABASE IF EXISTS scedb;
 
 # Crear base de datos "scedb"
-CREATE SCHEMA scedb;
+CREATE SCHEMA IF NOT EXISTS scedb;
 
 # Seleccionar base de datos "scedb"
 USE scedb;
@@ -46,7 +47,7 @@ Tablas sin claves foraneas
 *************************/
 
 # Crear tabla "sexos"
-CREATE TABLE sexos (
+CREATE TABLE IF NOT EXISTS sexos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     sexo VARCHAR(9) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -56,7 +57,7 @@ CREATE TABLE sexos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estados_civiles"
-CREATE TABLE estados_civiles (
+CREATE TABLE IF NOT EXISTS estados_civiles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado_civil VARCHAR(15) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -66,7 +67,7 @@ CREATE TABLE estados_civiles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estados"
-CREATE TABLE estados (
+CREATE TABLE IF NOT EXISTS estados (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado VARCHAR(20) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,7 +77,7 @@ CREATE TABLE estados (
 ) ENGINE=InnoDB;
 
 # Crear tabla "municipios"
-CREATE TABLE municipios (
+CREATE TABLE IF NOT EXISTS municipios (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     municipio VARCHAR(30) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -86,7 +87,7 @@ CREATE TABLE municipios (
 ) ENGINE=InnoDB;
 
 # Crear tabla "parroquias"
-CREATE TABLE parroquias (
+CREATE TABLE IF NOT EXISTS parroquias (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     parroquia VARCHAR(60) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,7 +97,7 @@ CREATE TABLE parroquias (
 ) ENGINE=InnoDB;
     
 # Crear tabla "carreras"
-CREATE TABLE carreras (
+CREATE TABLE IF NOT EXISTS carreras (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     carrera VARCHAR(45) NOT NULL,    
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,7 +107,7 @@ CREATE TABLE carreras (
 ) ENGINE=InnoDB;
 
 # Crear tabla "niveles"
-CREATE TABLE niveles (
+CREATE TABLE IF NOT EXISTS niveles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     nivel VARCHAR(50) NOT NULL,
     orden INT UNSIGNED NOT NULL,
@@ -117,7 +118,7 @@ CREATE TABLE niveles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "grados"
-CREATE TABLE grados (
+CREATE TABLE IF NOT EXISTS grados (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     grado VARCHAR(50) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -127,7 +128,7 @@ CREATE TABLE grados (
 ) ENGINE=InnoDB;
 
 # Crear tabla "unidades"
-CREATE TABLE unidades (
+CREATE TABLE IF NOT EXISTS unidades (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     codigo VARCHAR(16) COLLATE utf8mb4_bin NOT NULL, # Case Sensitive
     unidad VARCHAR(120) NOT NULL,
@@ -138,7 +139,7 @@ CREATE TABLE unidades (
 ) ENGINE=InnoDB;
 
 # Crear tabla "modulos"
-CREATE TABLE modulos (
+CREATE TABLE IF NOT EXISTS modulos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
     modulo VARCHAR(200) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -148,7 +149,7 @@ CREATE TABLE modulos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "condiciones"
-CREATE TABLE condiciones (
+CREATE TABLE IF NOT EXISTS condiciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     condicion VARCHAR(18) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,7 +159,7 @@ CREATE TABLE condiciones (
 ) ENGINE=InnoDB;
 
 # Crear tabla "detalles"
-CREATE TABLE detalles (
+CREATE TABLE IF NOT EXISTS detalles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     detalle VARCHAR(15) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -168,7 +169,7 @@ CREATE TABLE detalles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "periodos"
-CREATE TABLE periodos (
+CREATE TABLE IF NOT EXISTS periodos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     periodo VARCHAR(12) NOT NULL,
     fecha_inicial DATE NOT NULL,
@@ -180,7 +181,7 @@ CREATE TABLE periodos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "etnias"
-CREATE TABLE etnias (
+CREATE TABLE IF NOT EXISTS etnias (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     etnia VARCHAR(37) NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -190,7 +191,7 @@ CREATE TABLE etnias (
 ) ENGINE=InnoDB;
 
 # Crear tabla "documentos"
-CREATE TABLE documentos (
+CREATE TABLE IF NOT EXISTS documentos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     documento VARCHAR(60) NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT TRUE,
@@ -201,7 +202,7 @@ CREATE TABLE documentos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "resoluciones"
-CREATE TABLE resoluciones (
+CREATE TABLE IF NOT EXISTS resoluciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     resolucion SMALLINT UNSIGNED NOT NULL,
     acta SMALLINT UNSIGNED NOT NULL,
@@ -217,7 +218,7 @@ Tablas con claves foraneas
 ***************************/
 
 # Crear tabla "ubicaciones_geograficas"
-CREATE TABLE ubicaciones_geograficas (
+CREATE TABLE IF NOT EXISTS ubicaciones_geograficas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estado_id INT UNSIGNED NOT NULL,
     municipio_id INT UNSIGNED NOT NULL,
@@ -231,7 +232,7 @@ CREATE TABLE ubicaciones_geograficas (
 ) ENGINE=InnoDB;
 
 # Crear tabla "personas"
-CREATE TABLE personas (
+CREATE TABLE IF NOT EXISTS personas (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     cedula VARCHAR(9) NOT NULL,
     nombre1 VARCHAR(15) NOT NULL,
@@ -259,7 +260,7 @@ CREATE TABLE personas (
 ) ENGINE=InnoDB;
 
 # Crear tabla "docentes"
-CREATE TABLE docentes (
+CREATE TABLE IF NOT EXISTS docentes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     persona_id INT UNSIGNED NOT NULL,
     activo BOOLEAN NOT NULL DEFAULT FALSE,
@@ -270,7 +271,7 @@ CREATE TABLE docentes (
 ) ENGINE=InnoDB;
 
 # Crear tabla "planes_estudio"
-CREATE TABLE planes_estudio (
+CREATE TABLE IF NOT EXISTS planes_estudio (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     carrera_id INT UNSIGNED NOT NULL,
     nivel_id INT UNSIGNED NOT NULL,
@@ -289,7 +290,7 @@ CREATE TABLE planes_estudio (
 ) ENGINE=InnoDB;
 
 # Crear tabla "planes_estudio_modulos"
-CREATE TABLE planes_estudio_modulos (
+CREATE TABLE IF NOT EXISTS planes_estudio_modulos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     plan_estudio_id INT UNSIGNED NOT NULL,
     modulo_id INT UNSIGNED NULL DEFAULT NULL,
@@ -305,7 +306,7 @@ CREATE TABLE planes_estudio_modulos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "prelaciones"
-CREATE TABLE prelaciones (
+CREATE TABLE IF NOT EXISTS prelaciones (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     plan_estudio_id_1 INT UNSIGNED NOT NULL,
     plan_estudio_id_2 INT UNSIGNED NULL DEFAULT NULL,    
@@ -318,23 +319,24 @@ CREATE TABLE prelaciones (
 ) ENGINE=InnoDB;
     
 # Crear tabla "ofertas_academicas"
-CREATE TABLE ofertas_academicas (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
-    docente_id INT UNSIGNED NOT NULL,
-    periodo_id INT UNSIGNED NOT NULL,
-    plan_estudio_id INT UNSIGNED NOT NULL,
-    seccion CHAR(2) NOT NULL,
+CREATE TABLE IF NOT EXISTS ofertas_academicas (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    plan_estudio_modulo_id INT UNSIGNED NOT NULL,   
+    docente_id INT UNSIGNED NULL DEFAULT NULL,
+    periodo_id INT UNSIGNED NOT NULL,         
     cupos SMALLINT UNSIGNED NOT NULL,
+    numero_seccion SMALLINT UNSIGNED NOT NULL,
+    nomenclatura SMALLINT UNSIGNED NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),    
     FOREIGN KEY (docente_id) REFERENCES docentes (id),
     FOREIGN KEY (periodo_id) REFERENCES periodos (id),
-    FOREIGN KEY (plan_estudio_id) REFERENCES planes_estudio (id)
+    FOREIGN KEY (plan_estudio_modulo_id) REFERENCES planes_estudio_modulos (id)
 ) ENGINE=InnoDB;
 
 # Crear tabla "condiciones_detalles"    
-CREATE TABLE condiciones_detalles (
+CREATE TABLE IF NOT EXISTS condiciones_detalles (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     condicion_id INT UNSIGNED NOT NULL,
     detalle_id INT UNSIGNED NULL DEFAULT NULL,    
@@ -346,7 +348,7 @@ CREATE TABLE condiciones_detalles (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estudiantes"
-CREATE TABLE estudiantes (
+CREATE TABLE IF NOT EXISTS estudiantes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     persona_id INT UNSIGNED NOT NULL,
     carrera_id INT UNSIGNED NOT NULL,
@@ -360,7 +362,7 @@ CREATE TABLE estudiantes (
 ) ENGINE=InnoDB;
 
 # Crear tabla "historiales_academicos"
-CREATE TABLE historiales_academicos (
+CREATE TABLE IF NOT EXISTS historiales_academicos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estudiante_id INT UNSIGNED NOT NULL,
     oferta_academica_id INT UNSIGNED NOT NULL,
@@ -374,7 +376,7 @@ CREATE TABLE historiales_academicos (
 ) ENGINE=InnoDB;
 
 # Crear tabla "estudiantes_documentos"
-CREATE TABLE estudiantes_documentos (
+CREATE TABLE IF NOT EXISTS estudiantes_documentos (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     estudiante_id INT UNSIGNED NOT NULL,
     documento_id INT UNSIGNED NOT NULL,    
@@ -834,12 +836,10 @@ DELIMITER ;
 DROP procedure IF EXISTS select_plan_estudio;
 DELIMITER $$
 CREATE PROCEDURE select_plan_estudio (
-                    carrera VARCHAR(45), 
-                    nivel VARCHAR(50),
-                    resolucion SMALLINT,
-                    acta SMALLINT,
-                    fecha DATE)
-BEGIN
+                    carrera_id INT UNSIGNED, 
+                    nivel_id INT UNSIGNED,
+                    resolucion_id INT UNSIGNED)
+BEGIN	
     SELECT      planes_estudio.id, 
                 carreras.carrera, 
                 unidades.codigo, 
@@ -873,71 +873,55 @@ BEGIN
     AND         planes_estudio.nivel_id = view_modulos_ultimas_resoluciones.nivel_id 
     AND         planes_estudio.unidad_id = view_modulos_ultimas_resoluciones.unidad_id
     AND         planes_estudio.resolucion_id = resoluciones.id
-    AND         CASE WHEN carrera IS NOT NULL THEN
-                    carreras.carrera = carrera
-                ELSE
-                    carreras.carrera IS NOT NULL
+    AND         CASE WHEN carrera_id IS NOT NULL THEN 
+    				planes_estudio.carrera_id = carrera_id
+	            ELSE 
+	            	planes_estudio.carrera_id IS NOT NULL
                 END
-    AND         CASE WHEN nivel IS NOT NULL THEN
-                    niveles.nivel = nivel
-                ELSE 
-                    niveles.nivel IS NOT NULL
+    AND         CASE WHEN 
+    				nivel_id IS NOT NULL THEN planes_estudio.nivel_id = nivel_id
+            	ELSE 
+            		planes_estudio.nivel_id IS NOT NULL
                 END
-    AND         CASE WHEN resolucion IS NOT NULL THEN
-                    resoluciones.resolucion = resolucion
-            	ELSE 
-                    resoluciones.resolucion IS NOT NULL
-            	END 
-    AND         CASE WHEN acta IS NOT NULL THEN
-                    resoluciones.acta = acta
-            	ELSE 
-                    resoluciones.acta IS NOT NULL
-            	END 
-    AND         CASE WHEN fecha IS NOT NULL THEN
-                    resoluciones.fecha = fecha
-                ELSE 
-                    resoluciones.fecha IS NOT NULL
-                END    			
+    AND         CASE WHEN resolucion_id IS NOT NULL THEN 
+    				planes_estudio.resolucion_id = resolucion_id	                
+	            ELSE 
+	            	planes_estudio.resolucion_id IS NOT NULL
+            	END    			
     GROUP BY    carreras.carrera, 
             	niveles.orden, 
-            	unidades.codigo;
+            	unidades.codigo;	
 END$$
 DELIMITER ;
 
 # Crear procedimiento almacenado "select_plan_estudio_modulo"
 DROP procedure IF EXISTS select_plan_estudio_modulo;
 DELIMITER $$
-CREATE PROCEDURE select_plan_estudio_modulo (                     
-                    carrera VARCHAR(45), 
-                    codigo VARCHAR(16),
-                    nivel VARCHAR(50), 
-                    fecha_aprobacion DATE)
+CREATE PROCEDURE select_plan_estudio_modulo (plan_estudio_id INT UNSIGNED)
 BEGIN
-    SELECT      modulos.modulo,
+    DECLARE resolucion_id INT UNSIGNED DEFAULT NULL;
+    
+    SELECT      resoluciones.id INTO resolucion_id
+    FROM        planes_estudio_modulos,
+                resoluciones
+    WHERE       planes_estudio_modulos.resolucion_id = resoluciones.id
+    ORDER BY    resoluciones.fecha DESC
+    LIMIT 1;
+
+    SELECT      planes_estudio_modulos.id,
+    			modulos.id AS modulo_id,
+                modulos.modulo,
                 planes_estudio_modulos.hta / planes_estudio_modulos.htas AS semanas,
                 planes_estudio_modulos.htas,
-                planes_estudio_modulos.hta,			
-                planes_estudio_modulos.fecha_aprobacion 
-    FROM        planes_estudio,
-                planes_estudio_modulos,
-                carreras,
-                niveles,
-                unidades,
+                planes_estudio_modulos.hta,         
+                resoluciones.fecha 
+    FROM        planes_estudio_modulos,
                 modulos,
-                view_modulos_ultimas_fechas_aprobacion AS ultimas_fechas_aprobacion
-    WHERE       unidades.codigo = codigo
-    AND         carreras.carrera = carrera 
-    AND         niveles.nivel = nivel
-    AND         planes_estudio.carrera_id = carreras.id 
-    AND         planes_estudio.nivel_id = niveles.id 
-    AND         planes_estudio.fecha_aprobacion = fecha_aprobacion
-    AND         planes_estudio_modulos.plan_estudio_id = planes_estudio.id 
-    AND         planes_estudio_modulos.modulo_id = modulos.id 
-    AND         planes_estudio.unidad_id = unidades.id
-    AND         ultimas_fechas_aprobacion.carrera_id = planes_estudio.carrera_id 
-    AND         ultimas_fechas_aprobacion.nivel_id = planes_estudio.nivel_id 
-    AND         ultimas_fechas_aprobacion.unidad_id = planes_estudio.unidad_id 
-    AND         ultimas_fechas_aprobacion.fecha_aprobacion = planes_estudio_modulos.fecha_aprobacion 
+                resoluciones
+    WHERE       planes_estudio_modulos.plan_estudio_id = plan_estudio_id 
+    AND         planes_estudio_modulos.modulo_id = modulos.id
+    AND         planes_estudio_modulos.resolucion_id = resoluciones.id
+    AND         resoluciones.id = resolucion_id 
     ORDER BY    modulos.modulo;
 END$$
 DELIMITER ;
@@ -973,7 +957,8 @@ CREATE PROCEDURE select_planes_estudio_resoluciones (carrera VARCHAR(45))
 BEGIN
     SELECT      *
     FROM        (
-                SELECT      resoluciones.resolucion,
+                SELECT      resoluciones.id,
+                			resoluciones.resolucion,
                             resoluciones.acta,
                             resoluciones.fecha 
                 FROM        planes_estudio, 
@@ -995,27 +980,24 @@ DELIMITER ;
 DROP procedure IF EXISTS select_planes_estudio_niveles;
 DELIMITER $$
 CREATE PROCEDURE select_planes_estudio_niveles (
-                    carrera VARCHAR(45), 
-                    resolucion SMALLINT,
-                    acta SMALLINT,
-                    fecha DATE)
-BEGIN
-    SELECT      tabla.nivel 
-    FROM        (
-                SELECT  DISTINCT(niveles.nivel), 
-                        niveles.orden
-                FROM    planes_estudio,
-                        carreras,
-                        niveles,
-                        resoluciones
-                WHERE   planes_estudio.carrera_id = carreras.id
-                AND     planes_estudio.nivel_id = niveles.id
-                AND     planes_estudio.resolucion_id = resoluciones.id 
-                AND     carreras.carrera = carrera
-                AND     resoluciones.resolucion = resolucion
-                AND     resoluciones.acta = acta
-                AND     resoluciones.fecha = fecha) AS tabla
-    ORDER BY    orden ASC;
+                    carrera_id INT UNSIGNED, 
+                    resolucion_id INT UNSIGNED)
+BEGIN	
+	SELECT      niveles.id,
+				niveles.nivel,
+				niveles.orden 
+	FROM        niveles
+	INNER JOIN	(
+	            SELECT  DISTINCT(niveles.nivel),                 		
+	                    niveles.orden
+	            FROM    planes_estudio,
+	                    niveles
+	            WHERE   planes_estudio.carrera_id = carrera_id
+	            AND     planes_estudio.resolucion_id = resolucion_id
+	            AND     planes_estudio.nivel_id = niveles.id            
+	            ) AS tabla ON tabla.nivel = niveles.nivel
+	
+	ORDER BY    tabla.orden ASC;
 END$$
 DELIMITER ;
 
@@ -1126,6 +1108,56 @@ BEGIN
                 municipios,
                 parroquias
     WHERE       personas.cedula = cedula
+    AND         personas.sexo_id = sexos.id
+    AND         personas.estado_civil_id = estados_civiles.id
+    AND         personas.etnia_id = etnias.id    
+    AND         personas.ubicacion_geografica_id = ubicaciones_geograficas.id
+    AND         personas.id = docentes.persona_id        
+    AND         ubicaciones_geograficas.estado_id = estados.id
+    AND         ubicaciones_geograficas.municipio_id = municipios.id
+    AND         ubicaciones_geograficas.parroquia_id = parroquias.id;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "select_docentes"
+DROP procedure IF EXISTS select_docentes;
+DELIMITER $$
+CREATE PROCEDURE select_docentes (activo BOOLEAN)
+BEGIN
+    SELECT      docentes.id AS docente_id,
+                personas.id AS persona_id,
+                personas.cedula,
+                personas.nombre1,
+                personas.nombre2,
+                personas.apellido1,
+                personas.apellido2,
+                sexos.sexo,
+                personas.fecha_nacimiento,
+                personas.lugar_nacimiento,
+                get_edad(personas.fecha_nacimiento) as edad,
+                estados_civiles.estado_civil,
+                etnias.etnia,
+                estados.estado,
+                municipios.municipio,            
+                parroquias.parroquia,
+                personas.direccion,
+                personas.telefono_local,
+                personas.telefono_movil,
+                personas.correo_electronico,
+                docentes.activo
+    FROM        personas,
+                sexos,
+                estados_civiles,
+                etnias,
+                docentes,
+                ubicaciones_geograficas,
+                estados,
+                municipios,
+                parroquias
+    WHERE       CASE 
+                    WHEN activo IS NOT NULL THEN docentes.activo = activo
+                    ELSE docentes.activo IS NOT NULL
+                END
     AND         personas.sexo_id = sexos.id
     AND         personas.estado_civil_id = estados_civiles.id
     AND         personas.etnia_id = etnias.id    
@@ -1779,6 +1811,101 @@ BEGIN
 END$$
 DELIMITER ;
 
+# Crear procedimiento almacenado "select_ofertas_academicas_modulos"
+DROP procedure IF EXISTS select_ofertas_academicas_modulos;
+DELIMITER $$
+CREATE PROCEDURE select_ofertas_academicas_modulos (
+					periodo_id INT UNSIGNED,
+					carrera_id INT UNSIGNED,
+					nivel_id INT UNSIGNED,
+					unidad_id INT UNSIGNED)
+BEGIN
+    SELECT 	ofertas_academicas.id,
+			ofertas_academicas.docente_id,
+			ofertas_academicas.periodo_id,
+			ofertas_academicas.plan_estudio_modulo_id,			
+			get_seccion(ofertas_academicas.numero_seccion, ofertas_academicas.nomenclatura) AS seccion,
+			ofertas_academicas.cupos,
+			ofertas_academicas.numero_seccion,
+			ofertas_academicas.nomenclatura,
+			modulos.id AS modulo_id,
+			modulos.modulo,
+			planes_estudio_modulos.hta,
+			planes_estudio_modulos.htas
+	FROM 	ofertas_academicas,
+			planes_estudio_modulos,
+			planes_estudio,
+			modulos
+	WHERE	ofertas_academicas.plan_estudio_modulo_id = planes_estudio_modulos.id 
+	AND 	planes_estudio_modulos.plan_estudio_id = planes_estudio.id
+	AND		ofertas_academicas.periodo_id = periodo_id 
+	AND		planes_estudio.carrera_id = carrera_id
+	AND		planes_estudio.nivel_id = nivel_id
+	AND		planes_estudio.unidad_id = unidad_id
+	AND		plan_estudio_modulo_id = modulos.id
+	ORDER BY 	ofertas_academicas.numero_seccion ASC,
+				modulos.modulo ASC;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "update_ofertas_academicas_modulos"
+DROP procedure IF EXISTS update_ofertas_academicas_modulos;
+DELIMITER $$
+CREATE PROCEDURE update_ofertas_academicas_modulos (
+					id INT UNSIGNED,
+					docente_id INT,
+					cupos INT UNSIGNED,
+					numero_seccion INT UNSIGNED,
+					nomenclatura INT UNSIGNED)
+BEGIN
+    UPDATE 	ofertas_academicas 
+    SET		ofertas_academicas.docente_id = IF(docente_id > 0, docente_id, NULL),
+    		ofertas_academicas.cupos = cupos,
+    		ofertas_academicas.numero_seccion = numero_seccion,
+    		ofertas_academicas.nomenclatura = nomenclatura 
+	WHERE	ofertas_academicas.id = id;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "insert_oferta_academica"
+DROP procedure IF EXISTS insert_oferta_academica;
+DELIMITER $$
+CREATE PROCEDURE insert_oferta_academica (
+					plan_estudio_modulo_id INT UNSIGNED, 
+					docente_id INT,
+					periodo_id INT UNSIGNED,
+					cupos SMALLINT UNSIGNED,
+					numero_seccion SMALLINT UNSIGNED,
+					nomenclatura SMALLINT UNSIGNED)
+BEGIN
+	DECLARE id INT UNSIGNED DEFAULT NULL;	
+
+	SELECT 	ofertas_academicas.id INTO id
+	FROM	ofertas_academicas
+	WHERE 	ofertas_academicas.plan_estudio_modulo_id = plan_estudio_modulo_id
+	AND 	ofertas_academicas.periodo_id = periodo_id
+	AND 	ofertas_academicas.cupos = cupos
+	AND 	ofertas_academicas.numero_seccion = numero_seccion;	
+
+	IF id IS NULL THEN
+		INSERT INTO ofertas_academicas(
+	    					plan_estudio_modulo_id,
+							docente_id, 
+	    					periodo_id, 
+	    					cupos, 
+	    					numero_seccion, 
+	    					nomenclatura)
+	    VALUES(
+	    					plan_estudio_modulo_id,
+					    	IF(docente_id > 0, docente_id, null),
+					    	periodo_id,
+					    	cupos, 
+					    	numero_seccion, 
+					    	nomenclatura);
+	END IF;        
+END$$
+DELIMITER ;
+
 # Crear procedimiento almacenada "insert_docente"
 /* 	
     NOTA: Usar con transacciones (opcional pero recomendado). 
@@ -1940,6 +2067,44 @@ BEGIN
     UPDATE  docentes
     SET     docentes.activo = activo
     WHERE   docentes.id = docente_id;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "insert_sexo"
+DROP procedure IF EXISTS insert_sexo;
+DELIMITER $$
+CREATE PROCEDURE insert_sexo (sexo VARCHAR(9))
+BEGIN
+    DECLARE sexo_id INT UNSIGNED DEFAULT NULL;
+        
+    REPEAT
+        SET sexo_id = get_sexo_id(sexo);
+        
+        IF sexo_id IS NULL THEN
+            INSERT INTO sexos (sexo)
+            VALUES (sexo);
+        END IF;
+    UNTIL sexo_id IS NOT NULL
+    END REPEAT;    
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "insert_estado_civil"
+DROP procedure IF EXISTS insert_estado_civil;
+DELIMITER $$
+CREATE PROCEDURE insert_estado_civil (estado_civil VARCHAR(15))
+BEGIN
+    DECLARE estado_civil_id INT UNSIGNED DEFAULT NULL;
+        
+    REPEAT
+        SET estado_civil_id = get_estado_civil_id(estado_civil);
+        
+        IF estado_civil_id IS NULL THEN
+            INSERT INTO estados_civiles (estado_civil)
+            VALUES (estado_civil);
+        END IF;
+    UNTIL estado_civil_id IS NOT NULL
+    END REPEAT;    
 END$$
 DELIMITER ;
 
@@ -2445,6 +2610,42 @@ RETURN prelaciones;
 END$$
 DELIMITER ;
 
+## Crear función "get_seccion"
+DROP function IF EXISTS get_seccion;
+DELIMITER $$
+CREATE FUNCTION get_seccion (	
+					id_seccion SMALLINT UNSIGNED,
+					id_nomenclatura SMALLINT UNSIGNED)
+RETURNS VARCHAR(16383)
+DETERMINISTIC
+BEGIN
+	DECLARE seccion VARCHAR(16383) DEFAULT "";
+	DECLARE firstChar INT UNSIGNED DEFAULT NULL;
+	DECLARE numChars INT UNSIGNED DEFAULT NULL;
+	DECLARE id INt DEFAULT 0;
+
+	SET id = id_seccion;
+
+	IF id_nomenclatura = 0 THEN
+		SET firstChar = 65;
+		SET numChars = 26;
+	ELSE
+		SET firstChar = 48;
+		SET numChars = 10;
+	END IF;
+
+	SET seccion = CONCAT(CHAR((id MOD numChars) + firstChar), seccion);
+	
+	WHILE id >= numChars DO
+		SET id = (id DIV numChars) - 1;
+	
+		SET seccion = CONCAT(CHAR((id MOD numChars) + firstChar), seccion);
+	END WHILE;
+	
+RETURN seccion;
+END$$
+DELIMITER ;
+
 /****************************************************************************************************************************
 *****************************************************************************************************************************
 ****************************************************************************************************************************/
@@ -2453,15 +2654,22 @@ DELIMITER ;
 ---- PRECARGA DE DATOS ----
 -------------------------*/
 START TRANSACTION;
-# Sexos 
-INSERT INTO sexos (sexo) VALUES ('Femenino');
-INSERT INTO sexos (sexo) VALUES ('Masculino');
+# Sexos
+CALL insert_sexo('Femenino');
+CALL insert_sexo('Masculino');
+# INSERT INTO sexos (sexo) VALUES ('Femenino');
+# INSERT INTO sexos (sexo) VALUES ('Masculino');
 # Estados civiles
-INSERT INTO estados_civiles (estado_civil) VALUES ('Casada(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Soltera(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Divorciada(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Viuda(o)');
-INSERT INTO estados_civiles (estado_civil) VALUES ('Unión libre');
+CALL insert_estado_civil('Casada(o)');
+CALL insert_estado_civil('Soltera(o)');
+CALL insert_estado_civil('Divorciada(o)');
+CALL insert_estado_civil('Viuda(o)');
+CALL insert_estado_civil('Unión libre');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Casada(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Soltera(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Divorciada(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Viuda(o)');
+# INSERT INTO estados_civiles (estado_civil) VALUES ('Unión libre');
 # Condiciones  detalles
 CALL insert_condicion_detalle('Activo','Regular');
 CALL insert_condicion_detalle('Activo','Reingreso');
