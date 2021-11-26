@@ -1,6 +1,6 @@
 # ChangeLog
 Registros de cambios realizados en el proyecto Sistema de Control de Estudios.
-## [0.0.3] - 2021-11-05
+## [0.0.3] - 2021-11-25
 ### Añadido
 - Clase IFrameOfertaAcademica.
 - Clase SpinnerEditor.
@@ -20,13 +20,19 @@ Registros de cambios realizados en el proyecto Sistema de Control de Estudios.
 - Método removeRow a la clase IFrameOfertaAcademica.
 - Método prepareTableSecciones a la clase IFrameOfertaAcademica.
 - Método cleanTableSecciones a la clase IFrameOfertaAcademica.
+- Método prepareTablePlanEstudio a la clase IFrameOfertaAcademica.
 - Método fillComboBoxItem a la clase Controls.
 - Método toString a la clase Periodo.
+- Método hashCode e equals en la clase Módulo.
+- Método hashCode e equals en la clase OfertaAcademica.
+- Método hashCode e equals en la clase OfertaAcademicaModulo.
 - Procedimiento insert_sexo a la base de datos.
 - Procedimiento insert_estado civil a la base de datos.
 - Procedimiento select_docentes a la base de datos.
 - Procedimiento select_ofertas_academicas_modulos a la base de datos.
 - Procedimiento get_seccion a la base de datos.
+- Procedimiento update_ofertas_academicas_modulos a la base de datos.
+- Procedimiento insert_oferta_academica a la base de datos.
 
 ### Modificado
 - Renombrada clase VentanaDocentes a IFrameDocentes.
@@ -47,7 +53,9 @@ Registros de cambios realizados en el proyecto Sistema de Control de Estudios.
 - Método getCarreras de la clase Queries.
 - Método getResoluciones de la clase Queries.
 - Método getNiveles de la clase Queries.
+- Método getPlanEstudio de la clase Queries.
 - Método removeAllRowsTable de la clase Controls.
+- Método generateReportPlanEstudio de la clase Reports.
 
 ### Eliminado
 - Método insertPeriodo de la clase IFramePeriodos.

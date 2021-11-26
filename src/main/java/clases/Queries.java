@@ -16,7 +16,6 @@
  */
 package clases;
 
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -36,9 +35,7 @@ public class Queries {
     public Queries(ConnectionDB conn) {
         this.conn = conn;
     }
-
-    //Setters
-    //Getters
+    
     public Persona getPersonas(String cedula) {
         ResultSet rs;
         Persona persona;
@@ -196,14 +193,7 @@ public class Queries {
                 "select_detalles",
                 condicion);
     }
-    /*
-    public ArrayList<String> getCarreras() {
-        return getArrayList(
-                "carrera",
-                "select_carreras");
-    }
-    */
-    
+        
     public ArrayList<Carrera> getCarreras(){
         ResultSet rs;
         ArrayList<Carrera> arrayList;
@@ -264,7 +254,7 @@ public class Queries {
         return auxResoluciones;
     }
     
-    public ArrayList<Nivel> getNiveles(String carrera, int resolucion, int acta, Date fecha){
+    public ArrayList<Nivel> getNiveles(int carrera_id, int resolucion_id){
         ResultSet rs;
         ArrayList<Nivel> niveles;
         Nivel nivel;
@@ -272,10 +262,8 @@ public class Queries {
         niveles = new ArrayList<>();
         rs = conn.executeStoredProcedureWithResultSet(
                 "select_planes_estudio_niveles",
-                carrera,
-                resolucion,
-                acta,
-                fecha);
+                carrera_id,
+                resolucion_id);
         
         try {
             while (rs.next()) {
@@ -416,27 +404,54 @@ public class Queries {
     public ArrayList<OfertaAcademica> getOfertasAcademicas(int periodo_id, int carrera_id, int nivel_id, int unidad_id){
         ResultSet rs;
         ArrayList<OfertaAcademica> ofertasAcademicas;
+        ArrayList<OfertaAcademicaModulo> modulos;
         OfertaAcademica ofertaAcademica;
+        OfertaAcademicaModulo modulo;
+        int numeroSeccion;
+                
+        rs = conn.executeStoredProcedureWithResultSet(
+                "select_ofertas_academicas_modulos", 
+                periodo_id, 
+                carrera_id, 
+                nivel_id, 
+                unidad_id);        
         
-        ofertasAcademicas = new ArrayList<>();
-        
-        rs = conn.executeStoredProcedureWithResultSet("select_ofertas_academicas_modulos", periodo_id, carrera_id, nivel_id, unidad_id);
+        ofertasAcademicas = new ArrayList<>();                
         
         try {
-            while(rs.next()){
-                /*
+            while(rs.next()){                          
+                
+                numeroSeccion = rs.getInt("numero_seccion");
+
                 ofertaAcademica = new OfertaAcademica(
-                        rs.getInt("id"),                         
                         rs.getInt("periodo_id"),
-                        rs.getInt("plan_estudio_modulo_id"),                        
                         rs.getInt("cupos"),
-                        rs.getInt("id_seccion"),
-                        rs.getInt("id_nomenclatura")
+                        null,
+                        numeroSeccion,
+                        rs.getInt("nomenclatura")
                 );
                 
+                modulos = new ArrayList<>();                
+                                
+                do{
+                    modulo = new OfertaAcademicaModulo(
+                            rs.getInt("id"), 
+                            rs.getInt("docente_id"),
+                            rs.getInt("plan_estudio_modulo_id"),
+                            rs.getInt("modulo_id"),
+                            rs.getString("modulo"),
+                            rs.getInt("hta"),
+                            rs.getInt("htas")                            
+                    );
+                    modulos.add(modulo);
+                }while(rs.next() && numeroSeccion == rs.getInt("numero_seccion"));
+                
+                rs.previous();
+                
+                ofertaAcademica.setModulos(modulos);
+                
                 ofertasAcademicas.add(ofertaAcademica);
-                */
-            }
+            }                        
         } catch (SQLException ex) {            
             Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -486,59 +501,8 @@ public class Queries {
         
         return docentes;
     }
-
-    public ArrayList<Object[]> getPlanEstudio(String carrera, String nivel, int resolucion, int acta, Date fecha) {
-        String[] fields = {"id", "codigo", "unidad", "hta", "htas", "uc"};
-
-        return getArrayListObjects(fields, "select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
-    }
-    
-    /*
-    public ArrayList<Unidad> getPlanEstudio2(String carrera, String nivel, int resolucion, int acta, Date fecha){
-        ResultSet rsUnidades;
-        ResultSet rsModulos;
-        ArrayList<Unidad> materias;        
-        Unidad materia;
-        Modulo modulo;
         
-        materias = new ArrayList<>();
-        
-        rsUnidades = conn.executeStoredProcedureWithResultSet("select_plan_estudio", carrera, nivel, resolucion, acta, fecha);
-        
-        try {
-            while(rsUnidades.next()){                
-                materia = new Unidad(
-                        rsUnidades.getInt("id"),
-                        rsUnidades.getString("codigo"),
-                        rsUnidades.getString("unidad"),
-                        rsUnidades.getInt("hta"),
-                        rsUnidades.getInt("htas"),
-                        rsUnidades.getInt("uc"));
-                
-                rsModulos = conn.executeStoredProcedureWithResultSet(
-                        "select_plan_estudio_modulo", 
-                        materia.getId());
-                
-                while(rsModulos.next()){
-                    modulo = new Modulo(
-                            rsModulos.getInt("id"), 
-                            rsModulos.getString("modulo"), 
-                            rsModulos.getInt("hta"), 
-                            rsModulos.getInt("htas"));
-                    materia.getModulos().add(modulo);
-                }
-                
-                materias.add(materia);
-            }            
-        } catch (SQLException ex) {
-            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return materias;
-    }
-    */
-    
-    public ArrayList<Unidad> getPlanEstudio3(int carrera_id, int nivel_id, int resolucion_id){
+    public ArrayList<Unidad> getPlanEstudio(Integer carrera_id, Integer nivel_id, Integer resolucion_id){
         ResultSet rsUnidades;
         ResultSet rsModulos;
         ArrayList<Unidad> materias;        
@@ -549,9 +513,9 @@ public class Queries {
         
         rsUnidades = conn.executeStoredProcedureWithResultSet(
                 "select_plan_estudio", 
-                carrera_id >= 0 ? carrera_id : null, 
-                nivel_id >= 0 ? nivel_id : null, 
-                resolucion_id >= 0 ? resolucion_id : null);
+                carrera_id, 
+                nivel_id, 
+                resolucion_id);
         
         try {
             while(rsUnidades.next()){                
@@ -559,9 +523,10 @@ public class Queries {
                         rsUnidades.getInt("id"),
                         rsUnidades.getString("codigo"),
                         rsUnidades.getString("unidad"),
-                        rsUnidades.getInt("hta"),
-                        rsUnidades.getInt("htas"),
-                        rsUnidades.getInt("uc"));
+                        //rsUnidades.getInt("hta"),
+                        //rsUnidades.getInt("htas"),
+                        rsUnidades.getInt("uc")
+                );
                 
                 rsModulos = conn.executeStoredProcedureWithResultSet(
                         "select_plan_estudio_modulo", 
@@ -569,10 +534,12 @@ public class Queries {
                 
                 while(rsModulos.next()){
                     modulo = new Modulo(
-                            rsModulos.getInt("id"), 
+                            //rsModulos.getInt("id"), 
+                            rsModulos.getInt("modulo_id"), 
                             rsModulos.getString("modulo"), 
                             rsModulos.getInt("hta"), 
                             rsModulos.getInt("htas"));
+                    modulo.setPlanesEstudioModulosId(rsModulos.getInt("id"));
                     unidad.getModulos().add(modulo);
                 }
                 
@@ -584,8 +551,7 @@ public class Queries {
         
         return materias;
     }
-
-    //Actions
+    
     public Status updateEstudiante(Estudiante estudiante) {
         Status status;
 
@@ -866,5 +832,124 @@ public class Queries {
                 periodo.getPeriodo(), 
                 periodo.getFechaInicial(), 
                 periodo.getFechaFinal());
+    }
+    
+    public Status updateOfertaAcademica(ArrayList<OfertaAcademica> ofertasAcademicas){        
+        Status status;
+        
+        status = Status.OK;
+        
+        try{
+            conn.startTransaction();
+            for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+                for (OfertaAcademicaModulo modulo : ofertaAcademica.getModulos()) {
+                    if (modulo.getOfertaAcademicaId() > 0) {                        
+                        status = conn.executeStoredProcedure(
+                                "update_ofertas_academicas_modulos",
+                                modulo.getOfertaAcademicaId(),
+                                modulo.getDocenteId(),
+                                ofertaAcademica.getCupos(),
+                                ofertaAcademica.getNumeroSeccion(),
+                                ofertaAcademica.getNomenclatura());
+                        if (status != Status.OK) {
+                            break;
+                        }                        
+                    }
+                    if (status != Status.OK) {
+                        break;
+                    }
+                }
+            }
+            conn.commit();
+        } catch (SQLException ex) {
+            try {
+                conn.rollback();
+                status = Status.ERROR;
+            } catch (SQLException ex1) {
+                Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
+            }
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }        
+        
+        return  status;
+    }
+    
+    public Status insertOfertaAcademica(ArrayList<OfertaAcademica> ofertasAcademicas){
+        Status status;
+        
+        status = Status.OK;
+        try {
+            conn.startTransaction();
+            for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+                for (OfertaAcademicaModulo modulo : ofertaAcademica.getModulos()) {                    
+                    if (modulo.getOfertaAcademicaId() <= 0) {
+                        System.out.println("getPeriodoId(): " + ofertaAcademica.getPeriodoId());
+                        System.out.println("getCupos(): " + ofertaAcademica.getCupos());
+                        System.out.println("getNumeroSeccion(): " + ofertaAcademica.getNumeroSeccion());
+                        System.out.println("getNomenclatura(): " + ofertaAcademica.getNomenclatura());
+                        System.out.println("-".repeat(10));
+                        
+                        status = conn.executeStoredProcedure(
+                                "insert_oferta_academica",
+                                modulo.getPlanesEstudioModulosId(),
+                                modulo.getDocenteId(),
+                                ofertaAcademica.getPeriodoId(),
+                                ofertaAcademica.getCupos(),
+                                ofertaAcademica.getNumeroSeccion(),
+                                ofertaAcademica.getNomenclatura());
+                        if (status != Status.OK) {
+                            break;
+                        }                        
+                    }
+                    if (status != Status.OK) {
+                        break;
+                    }
+                }
+            }
+            /*
+            for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+                if (ofertaAcademica.getId() <= 0) {
+                    modulos = ofertaAcademica.getModulos();
+                    //System.out.println("getPlanEstudioModuloId(): " + ofertaAcademica.getPlanEstudioModuloId());
+                    System.out.println("getId(): " + ofertaAcademica.getId());
+                    System.out.println("getPeriodoId(): " + ofertaAcademica.getPeriodoId());
+                    System.out.println("getCupos(): " + ofertaAcademica.getCupos());
+                    System.out.println("getNumeroSeccion(): " + ofertaAcademica.getNumeroSeccion());
+                    System.out.println("getNomenclatura(): " + ofertaAcademica.getNomenclatura());
+                    System.out.println("-".repeat(10));
+
+                    for (Modulo modulo : modulos) {
+                        System.out.println(modulo.getDocenteId());
+                        status = conn.executeStoredProcedure(
+                                "insert_oferta_academica",
+                                //modulo.getId(),
+                                modulo.getPlanesEstudioModulosId(),
+                                modulo.getDocenteId(),
+                                ofertaAcademica.getPeriodoId(),
+                                ofertaAcademica.getCupos(),
+                                ofertaAcademica.getNumeroSeccion(),
+                                ofertaAcademica.getNomenclatura());
+                        if (status != Status.OK) {
+                            break;
+                        }
+                    }
+                }                
+                if (status != Status.OK) {
+                    break;
+                }
+            }
+            */
+            conn.commit();
+        } catch (SQLException ex) {
+            try {
+                conn.rollback();
+                status = Status.ERROR;
+            } catch (SQLException ex1) {
+                Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex1);
+            }
+            Logger.getLogger(Queries.class.getName()).log(Level.SEVERE, null, ex);
+        }        
+        
+        return status;
     }
 }

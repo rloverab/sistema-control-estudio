@@ -21,25 +21,24 @@ import clases.ComboBoxEditor;
 import clases.Controls;
 import clases.Docente;
 import clases.Item;
-import clases.Modulo;
 import clases.Nivel;
 import clases.OfertaAcademica;
+import clases.OfertaAcademicaModulo;
 import clases.Unidad;
 import clases.Periodo;
 import clases.Queries;
 import clases.Resolucion;
 import clases.SpinnerEditor;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultListSelectionModel;
+import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
+import servicios.ConnectionDB.Status;
 
 /**
  *
@@ -51,7 +50,9 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     private Resolucion resolucion;
     private final ArrayList<Docente> docentes;
     private ArrayList<OfertaAcademica> ofertasAcademicas;
-    
+    private int hash;
+    private boolean isValueChangedSecciones;
+
     /**
      * Creates new form VentanaOfertaAcademica
      *
@@ -59,14 +60,19 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
      */
     public IFrameOfertaAcademica(Queries queries) {
         initComponents();
-        ofertasAcademicas = new ArrayList<>();
-        this.queries = queries;
 
+        ofertasAcademicas = new ArrayList<>();
+        isValueChangedSecciones = false;
+
+        this.queries = queries;
         docentes = queries.getDocentes(true);
+
         fillComboBoxPeriodo();
         prepareTableSecciones();
         prepareTableModulos();
-    }    
+
+        hash = ofertasAcademicas.hashCode();
+    }
 
     private void fillComboBoxPeriodo() {
         ArrayList<Periodo> periodos;
@@ -88,63 +94,60 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     private void fillComboBoxCarrera() {
         ArrayList<Item> items;
         ArrayList<Carrera> carreras;
-        
+
         cbxCarrera.removeAllItems();
+
         if (cbxPeriodo.getSelectedIndex() >= 0) {
-            items = new ArrayList<>();            
-            carreras =  queries.getCarreras();           
-            
+            items = new ArrayList<>();
+            carreras = queries.getCarreras();
+
             carreras.forEach(carrera -> items.add(new Item(carrera)));
-                    
-            Controls.fillComboBoxItem(cbxCarrera, items, null);
+
+            Controls.fillComboBoxItem(cbxCarrera, items, null, -1);
         }
         
-        cbxCarrera.setSelectedIndex(-1);
         cbxCarrera.setEnabled(cbxCarrera.getItemCount() > 0);
     }
 
     private void fillComboBoxNivel() {
         ArrayList<Item> items;
         ArrayList<Nivel> niveles;
-        
+        Carrera carrera;
+
         cbxNivel.removeAllItems();
-        if(resolucion != null && cbxCarrera.getSelectedIndex() >= 0){
+        if (resolucion != null && cbxCarrera.getSelectedIndex() >= 0) {
             items = new ArrayList<>();
-            niveles = queries.getNiveles(
-                    ((Item) cbxCarrera.getSelectedItem()).getLabel(),
-                    resolucion.getResolucion(),
-                    resolucion.getActa(),
-                    resolucion.getFecha());
+            carrera = (Carrera) ((Item) cbxCarrera.getSelectedItem()).getValue();
+            niveles = queries.getNiveles(carrera.getId(), resolucion.getId());
             niveles.forEach(nivel -> items.add(new Item(nivel)));
-            
             Controls.fillComboBoxItem(cbxNivel, items, null);
         }
-        
+
         cbxNivel.setSelectedIndex(-1);
         cbxNivel.setEnabled(cbxNivel.getItemCount() > 0);
     }
 
-    private void fillComboBoxMateria() {        
+    private void fillComboBoxMateria() {
         ArrayList<Unidad> unidades;
         ArrayList<Item> items;
         Carrera carrera;
         Nivel nivel;
-        
+
         cbxMateria.removeAllItems();
-        
-        if (cbxCarrera.getItemCount() >= 0 && cbxNivel.getSelectedIndex() >= 0) {            
-            carrera = (Carrera) ((Item) cbxCarrera.getSelectedItem()).getValue();      
+
+        if (cbxCarrera.getItemCount() >= 0 && cbxNivel.getSelectedIndex() >= 0) {
+            carrera = (Carrera) ((Item) cbxCarrera.getSelectedItem()).getValue();
             nivel = (Nivel) ((Item) cbxNivel.getSelectedItem()).getValue();
-            
-            unidades = queries.getPlanEstudio3(
+
+            unidades = queries.getPlanEstudio(
                     carrera.getId(),
                     nivel.getId(),
                     resolucion.getId());
-            
+
             if (unidades.size() > 0) {
                 items = new ArrayList<>();
-                
-                unidades.forEach(materia -> {                    
+
+                unidades.forEach(materia -> {
                     items.add(new Item(materia));
                 });
                 Controls.fillComboBoxItem(
@@ -157,41 +160,47 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxMateria.setEnabled(cbxMateria.getItemCount() > 0);
     }
 
-    private void fillTableSecciones(){
-        DefaultTableModel dtm;        
-        
+    private void fillTableSecciones() {
+        DefaultTableModel dtm;
+        Object[] objects;
+
         dtm = (DefaultTableModel) tblSecciones.getModel();
-        
+
         Controls.removeAllRowsTable(tblSecciones);
-        
-        ofertasAcademicas.forEach(ofertaAcademica -> {
-            Object[] objects;            
-            objects = new Object[] {                
+
+        for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+
+            objects = new Object[]{
                 ofertaAcademica.getSeccion(),
                 ofertaAcademica.getCupos()
             };
-            
+
             dtm.addRow(objects);
-        });        
+        }
+
+        tblSecciones.scrollRectToVisible(tblSecciones.getCellRect(tblSecciones.getRowCount() - 1, 0, true));
     }
-    
-    private void fillTableModulos(){
+
+    private void fillTableModulos() {
         DefaultTableModel dtm;
+        ArrayList<OfertaAcademicaModulo> modulos;
         int index;
-        
+
         Controls.removeAllRowsTable(tblModulos);
         dtm = (DefaultTableModel) tblModulos.getModel();
-        index = tblSecciones.getSelectedRow();      
-                
-        if(index >= 0){
-            ofertasAcademicas.get(index).getModulos().forEach(modulo -> {
+        index = tblSecciones.getSelectedRow();
+
+        if (index >= 0) {
+            modulos = ofertasAcademicas.get(index).getModulos();
+
+            modulos.forEach(modulo -> {
                 Object[] objects;
                 String fullname;
-                
-                fullname = null;
 
-                for (Docente docente : docentes){
-                    if(docente.getDocenteId() == modulo.getDocente_id()){
+                fullname = "Por determinar";
+
+                for (Docente docente : docentes) {
+                    if (modulo.getDocenteId() != null && docente.getDocenteId() == modulo.getDocenteId()) {
                         fullname = docente.toString();
                         break;
                     }
@@ -200,75 +209,137 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
                     modulo.getId(),
                     modulo.getModulo(),
                     fullname};
-                
+
                 dtm.addRow(objects);
             });
         }
     }
-    
-    private OfertaAcademica.Nomenclatura getNomenclatura(){
-        switch(cbxSecciones.getSelectedIndex()){
+
+    private int getNomenclatura() {
+        switch (cbxSecciones.getSelectedIndex()) {
             case 0:
-                return OfertaAcademica.Nomenclatura.ALFABETICO;
+                return OfertaAcademica.ALFABETICO;
+            case 1:
             default:
-                return OfertaAcademica.Nomenclatura.NUMERICO;
+                return OfertaAcademica.NUMERICO;
         }
     }
-    
+
+    private void updateButtonGuardar() {
+        boolean enabled;
+
+        System.out.println("hash: " + hash);
+        System.out.println("hashCode(): " + ofertasAcademicas.hashCode());
+        System.out.println("-".repeat(10));
+
+        enabled = tblSecciones.getRowCount() > 0 && (hash != ofertasAcademicas.hashCode());
+
+        btnGuardar.setEnabled(enabled);
+    }
+
     private void addRow() {
         Unidad unidad;
-        ArrayList<Modulo> modulos;
-        Periodo periodo;        
+        ArrayList<OfertaAcademicaModulo> modulos;
+        Periodo periodo;
         OfertaAcademica ofertaAcademica;
-        
+        int selectedRow;
+
         modulos = new ArrayList<>();
-        
-        periodo = (Periodo) ((Item)cbxPeriodo.getSelectedItem()).getValue();
-        unidad = (Unidad) ((Item)cbxMateria.getSelectedItem()).getValue();                
+
+        periodo = (Periodo) ((Item) cbxPeriodo.getSelectedItem()).getValue();
+        unidad = (Unidad) ((Item) cbxMateria.getSelectedItem()).getValue();
+
         unidad.getModulos().forEach(modulo -> {
-            try {
-                modulos.add((Modulo) modulo.clone());
-            } catch (CloneNotSupportedException ex) {
-                Logger.getLogger(IFrameOfertaAcademica.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            OfertaAcademicaModulo ofertaAcademicaModulo;
+            ofertaAcademicaModulo = new OfertaAcademicaModulo(
+                    0,
+                    null,
+                    modulo.getPlanesEstudioModulosId(),
+                    modulo.getId(),
+                    modulo.getModulo(),
+                    modulo.getHTA(),
+                    modulo.getHTAS());
+            modulos.add(ofertaAcademicaModulo);
         });
-        
+
         ofertaAcademica = new OfertaAcademica(
-                0, 
                 periodo.getId(),
-                0 , 
-                1, 
-                modulos, 
-                ofertasAcademicas.size(), 
-                getNomenclatura());
+                1,
+                modulos,
+                ofertasAcademicas.size(),
+                getNomenclatura()
+        );
+
         ofertasAcademicas.add(ofertaAcademica);
-        
+
         fillTableSecciones();
+
+        selectedRow = tblSecciones.getRowCount() - 1;
+
+        if (selectedRow >= 0) {
+            tblSecciones.setRowSelectionInterval(selectedRow, selectedRow);
+        }
     }
 
     private void removeRow() {
-        if(ofertasAcademicas.size() > 0){
-            ofertasAcademicas.remove(ofertasAcademicas.size() - 1);
+        int selectedRow;
+        int size;
+        int index;
+        boolean saved;
+        ArrayList<OfertaAcademicaModulo> modulos;
+        String message;
+        String title_;
+        int messageType;
+
+        size = ofertasAcademicas.size();
+        index = size - 1;
+        saved = false;
+
+        if (index > 0) {
+            modulos = ofertasAcademicas.get(index).getModulos();
+
+            for (OfertaAcademicaModulo modulo : modulos) {
+                if (modulo.getOfertaAcademicaId() > 0) {
+                    saved = true;
+                    break;
+                }
+            }
+
+            if (!saved) {
+                ofertasAcademicas.remove(index);
+
+                fillTableSecciones();
+
+                selectedRow = tblSecciones.getRowCount() - 1;
+
+                if (selectedRow >= 0) {
+                    tblSecciones.setRowSelectionInterval(selectedRow, selectedRow);
+                }
+            } else {
+                message = "Las secciones restantes ya se encuentran guardadas "
+                        + "en la base de datos. No pueden ser eliminadas.";
+                title_ = "Eliminar sección";
+                messageType = JOptionPane.INFORMATION_MESSAGE;
+                JOptionPane.showInternalMessageDialog(this, message, title_, messageType);
+            }
         }
-        
-        fillTableSecciones();
     }
 
     private void prepareTableSecciones() {
         DefaultTableModel dtm;
         TableColumnModel tcm;
         TableColumnModel tcmh;
-        DefaultListSelectionModel dlsm; 
+        DefaultListSelectionModel dlsm;
         int[] width;
 
         dtm = (DefaultTableModel) tblSecciones.getModel();
         tcm = tblSecciones.getColumnModel();
-        tcmh = tblSecciones.getTableHeader().getColumnModel();        
+        tcmh = tblSecciones.getTableHeader().getColumnModel();
         dlsm = (DefaultListSelectionModel) tblSecciones.getSelectionModel();
         width = new int[]{60};
 
         tcm.getColumn(1).setCellEditor(new SpinnerEditor(1, 1, 100, 1));
-        tblSecciones.setRowHeight(21);        
+        tblSecciones.setRowHeight(21);
         Controls.removeAllRowsTable(tblSecciones);
 
         for (int i = 0; i < width.length; i++) {
@@ -286,50 +357,59 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             @Override
             public void tableChanged(TableModelEvent e) {
                 OfertaAcademica ofertaAcademica;
+                int filas = dtm.getRowCount();
+                int secciones = ofertasAcademicas.size();
                 btnBorrar.setEnabled(dtm.getRowCount() > 0);
-                
-                if (ofertasAcademicas.size() > 0) {
+
+                if (secciones > 0 && filas == secciones) {
                     for (int i = 0; i < dtm.getRowCount(); i++) {
                         ofertaAcademica = ofertasAcademicas.get(i);
                         ofertaAcademica.setNumeroSeccion(i);
                         ofertaAcademica.setCupos((int) dtm.getValueAt(i, 1));
                         ofertaAcademica.setNomenclatura(getNomenclatura());
-                    }                    
-                }                 
+                    }
+                }
+
+                updateCantidadSecciones();
+                updateCantidadCupos();
+                updateButtonGuardar();
             }
         });
-        
+
         dlsm.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                fillTableModulos();                
+                isValueChangedSecciones = true;
+                fillTableModulos();
+                isValueChangedSecciones = false;
             }
         });
 
-        btnBorrar.setEnabled(dtm.getRowCount() > 0);        
+        btnBorrar.setEnabled(dtm.getRowCount() > 0);
     }
 
-    private void prepareTableModulos(){
+    private void prepareTableModulos() {
         DefaultTableModel dtm;
         TableColumnModel tcm;
         TableColumnModel tcmh;
         int[] width;
         String[] items;
-        
+
         dtm = (DefaultTableModel) tblModulos.getModel();
         tcm = tblModulos.getColumnModel();
-        tcmh = tblModulos.getTableHeader().getColumnModel();        
-        width = new int[]{0, 200};
-        items = new String[docentes.size()];
-        
+        tcmh = tblModulos.getTableHeader().getColumnModel();
+        width = new int[]{0, 300};
+        items = new String[docentes.size() + 1];
+
+        items[0] = "Por determinar";
+
         for (int i = 0; i < docentes.size(); i++) {
-            items[i] = docentes.get(i).toString();
+            items[i + 1] = docentes.get(i).toString();
         }
-        
+
         tcm.getColumn(2).setCellEditor(new ComboBoxEditor(items));
-        tblModulos.setRowHeight(21);  
-        
-        //removeAllRowsTableModule();
+        tblModulos.setRowHeight(21);
+
         Controls.removeAllRowsTable(tblModulos);
 
         for (int i = 0; i < width.length; i++) {
@@ -342,65 +422,200 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
                 tcm.getColumn(i).setPreferredWidth(tcmh.getColumn(i).getPreferredWidth());
             }
         }
-        
+
         dtm.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
-                OfertaAcademica ofertaAcademica;                
-                int index;
-                
+                String seccion;
+                int indexSeccion;
+                OfertaAcademicaModulo modulo;
+                Integer docenteId;
+
+                if (isValueChangedSecciones) {
+                    return;
+                }
+
                 if (tblModulos.getRowCount() > 0) {
-                    index = tblSecciones.getSelectedRow();
-                    if (index >= 0) {
-                        ofertaAcademica = ofertasAcademicas.get(index);
-                        if (tblModulos.getRowCount() == ofertaAcademica.getModulos().size()) {
-                            for(int i = 0; i < ofertaAcademica.getModulos().size(); i++){                                
-                                ofertaAcademica
-                                        .getModulos()
-                                        .get(i)
-                                        .setDocente_id(tblModulos.getValueAt(i, 2) == null ? -1 : getDocenteId(tblModulos.getValueAt(i, 2).toString()));                                
+                    indexSeccion = tblSecciones.getSelectedRow();
+
+                    if (indexSeccion >= 0) {
+                        seccion = tblSecciones.getValueAt(indexSeccion, 0).toString();
+
+                        for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+                            if (ofertaAcademica.getSeccion().equalsIgnoreCase(seccion)) {
+                                for (int i = 0; i < tblModulos.getRowCount(); i++) {
+                                    modulo = ofertaAcademica.getModulos().get(i);
+                                    docenteId = getDocenteId(tblModulos.getValueAt(i, 2).toString());
+
+                                    System.out.println("docenteId: " + docenteId);
+                                    System.out.println("modulo.getDocenteId(): " + modulo.getDocenteId());
+
+                                    if (modulo.getDocenteId() == null || modulo.getDocenteId().compareTo(docenteId) != 0) {
+                                        modulo.setDocenteId(docenteId);
+                                    }
+
+                                }
+
+                                break;
                             }
                         }
                     }
-                }                
+                }
+
+                updateButtonGuardar();
             }
         });
     }
-    
-    private int getDocenteId(String fullname){
+
+    private int getDocenteId(String fullname) {
         int id;
-        id = -1;
-        
-        for(Docente docente : docentes){
-            if(docente.toString().equalsIgnoreCase(fullname)){
+
+        id = 0;
+
+        for (Docente docente : docentes) {
+            if (docente.toString().equalsIgnoreCase(fullname)) {
+
                 id = docente.getDocenteId();
                 break;
             }
         }
-        
+
         return id;
     }
-    
-    private void updateSecciones(){
+
+    private void updateSecciones() {
         boolean enabled;
         DefaultTableModel dtm;
-        
+        int selectedRow;
+
         enabled = cbxSecciones.getSelectedIndex() >= 0;
-        
+
         btnAgregar.setEnabled(enabled);
         tblSecciones.setEnabled(enabled);
-        
-        if(!enabled){
+
+        if (!enabled) {
             Controls.removeAllRowsTable(tblSecciones);
-        }else{
+        } else {
+            selectedRow = tblSecciones.getSelectedRow();
+            Controls.removeAllRowsTable(tblSecciones);
             dtm = (DefaultTableModel) tblSecciones.getModel();
-            
-            for(int i = 0; i < ofertasAcademicas.size(); i++){             
+            for (int i = 0; i < ofertasAcademicas.size(); i++) {
                 ofertasAcademicas.get(i).setNomenclatura(getNomenclatura());
-                dtm.setValueAt(ofertasAcademicas.get(i).getSeccion(), i, 0);
-                
+                dtm.addRow(new Object[]{
+                    ofertasAcademicas.get(i).getSeccion(),
+                    ofertasAcademicas.get(i).getCupos()
+                });
+            }
+            if (selectedRow >= 0 && selectedRow < tblSecciones.getRowCount()) {
+                tblSecciones.setRowSelectionInterval(selectedRow, selectedRow);
             }
         }
+    }
+
+    private int getCantidadCupos() {
+        boolean isSelectedPeriodo;
+        boolean isSelectedCarrera;
+        boolean isSelectedNivel;
+        boolean isSelectedMateria;
+        int cupos;
+
+        isSelectedPeriodo = cbxPeriodo.getSelectedIndex() >= 0;
+        isSelectedCarrera = cbxCarrera.isEnabled() && cbxCarrera.getSelectedIndex() >= 0;
+        isSelectedNivel = cbxNivel.isEnabled() && cbxNivel.getSelectedIndex() >= 0;
+        isSelectedMateria = cbxMateria.isEnabled() && cbxMateria.getSelectedIndex() >= 0;
+        cupos = 0;
+
+        if (isSelectedPeriodo && isSelectedCarrera && isSelectedNivel && isSelectedMateria) {
+            for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+                cupos += ofertaAcademica.getCupos();
+            }
+        }
+
+        return cupos;
+    }
+
+    private int getCantidadSecciones() {
+        boolean isSelectedPeriodo;
+        boolean isSelectedCarrera;
+        boolean isSelectedNivel;
+        boolean isSelectedMateria;
+        int secciones;
+
+        isSelectedPeriodo = cbxPeriodo.getSelectedIndex() >= 0;
+        isSelectedCarrera = cbxCarrera.isEnabled() && cbxCarrera.getSelectedIndex() >= 0;
+        isSelectedNivel = cbxNivel.isEnabled() && cbxNivel.getSelectedIndex() >= 0;
+        isSelectedMateria = cbxMateria.isEnabled() && cbxMateria.getSelectedIndex() >= 0;
+        secciones = 0;
+
+        if (isSelectedPeriodo && isSelectedCarrera && isSelectedNivel && isSelectedMateria) {
+            secciones = ofertasAcademicas.size();
+        }
+
+        return secciones;
+    }
+
+    private void updateCantidadSecciones() {
+        lblCantidadSecciones.setText("" + getCantidadSecciones());
+    }
+
+    private void updateCantidadCupos() {
+        lblCantidadCupos.setText("" + getCantidadCupos());
+    }
+
+    private void saveChanges() {
+        String title_;
+        String message;
+        int optionType;
+        int result;
+        int messageType;
+        Status statusInsert;
+        Status statusUpdate;
+
+        title_ = "Guardar cambios";
+        message = "¿Desea guardar los cambios realizados?\n\n"
+                + "Advertencia: Las secciones nuevas serán permanentes, "
+                + "el resto de los datos relacionados si podrán ser modificados.";
+        optionType = JOptionPane.YES_NO_OPTION;
+        messageType = JOptionPane.QUESTION_MESSAGE;
+
+        result = JOptionPane.showInternalConfirmDialog(this, message, title_, optionType, messageType);
+
+        if (result == JOptionPane.YES_OPTION) {
+            statusInsert = queries.insertOfertaAcademica(ofertasAcademicas);
+            statusUpdate = queries.updateOfertaAcademica(ofertasAcademicas);
+
+            if ((Status.OK == statusInsert) && (Status.OK == statusUpdate)) {
+                message = "Datos guardados";
+                messageType = JOptionPane.INFORMATION_MESSAGE;
+                updateOfertasAcademicas();
+            } else {
+                message = "Datos no guardados";
+                messageType = JOptionPane.ERROR_MESSAGE;
+            }
+
+            JOptionPane.showInternalMessageDialog(this, message, title_, messageType);
+        }
+
+    }
+
+    private void updateOfertasAcademicas() {
+        Periodo periodo;
+        Carrera carrera;
+        Nivel nivel;
+        Unidad unidad;
+
+        periodo = (Periodo) ((Item) cbxPeriodo.getModel().getSelectedItem()).getValue();
+        carrera = (Carrera) ((Item) cbxCarrera.getModel().getSelectedItem()).getValue();
+        nivel = (Nivel) ((Item) cbxNivel.getModel().getSelectedItem()).getValue();
+        unidad = (Unidad) ((Item) cbxMateria.getModel().getSelectedItem()).getValue();
+        ofertasAcademicas = queries.getOfertasAcademicas(
+                periodo.getId(),
+                carrera.getId(),
+                nivel.getId(),
+                unidad.getId()
+        );
+
+        System.out.println("Secciones: " + ofertasAcademicas.size());
     }
 
     /**
@@ -419,13 +634,12 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxCarrera = new javax.swing.JComboBox<>();
         lblNivel = new javax.swing.JLabel();
         cbxNivel = new javax.swing.JComboBox<>();
-        jPanel3 = new javax.swing.JPanel();
         lblMateria = new javax.swing.JLabel();
-        cbxMateria = new javax.swing.JComboBox<>();
         lblSecciones = new javax.swing.JLabel();
+        cbxMateria = new javax.swing.JComboBox<>();
         cbxSecciones = new javax.swing.JComboBox<>();
         btnGuardar = new javax.swing.JButton();
-        btnCancelar = new javax.swing.JButton();
+        btnCarrar = new javax.swing.JButton();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblSecciones = new javax.swing.JTable();
@@ -437,12 +651,12 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         jPanel6 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
+        lblCantidadSecciones = new javax.swing.JLabel();
+        lblCantidadCupos = new javax.swing.JLabel();
 
         setTitle("Oferta académica");
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Parámetros"));
 
         lblPeriodo.setText("Periodo");
 
@@ -450,11 +664,6 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
         cbxPeriodo.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 cbxPeriodoItemStateChanged(evt);
-            }
-        });
-        cbxPeriodo.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cbxPeriodoActionPerformed(evt);
             }
         });
 
@@ -476,6 +685,26 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             }
         });
 
+        lblMateria.setText("Materia");
+
+        lblSecciones.setText("Secciones");
+
+        cbxMateria.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cbxMateria.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        cbxMateria.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbxMateriaItemStateChanged(evt);
+            }
+        });
+
+        cbxSecciones.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Alfabéticas", "Numéricas" }));
+        cbxSecciones.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        cbxSecciones.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbxSeccionesItemStateChanged(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -483,19 +712,19 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(lblPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbxPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(lblCarrera, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbxCarrera, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(lblNivel, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbxNivel, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lblMateria, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblNivel, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblCarrera, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblSecciones, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(cbxMateria, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbxNivel, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbxSecciones, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbxCarrera, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbxPeriodo, javax.swing.GroupLayout.PREFERRED_SIZE, 474, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(6, 6, 6))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -512,69 +741,29 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cbxNivel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblNivel))
-                .addContainerGap(9, Short.MAX_VALUE))
-        );
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-
-        lblMateria.setText("Materia");
-
-        cbxMateria.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        cbxMateria.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        cbxMateria.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                cbxMateriaItemStateChanged(evt);
-            }
-        });
-
-        lblSecciones.setText("Secciones");
-
-        cbxSecciones.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Alfabéticas", "Numéricas" }));
-        cbxSecciones.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        cbxSecciones.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                cbxSeccionesItemStateChanged(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(lblSecciones, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(cbxSecciones, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(lblMateria, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cbxMateria, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(cbxMateria, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblMateria))
                 .addGap(7, 7, 7)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblSecciones)
                     .addComponent(cbxSecciones, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         btnGuardar.setText("Guardar");
-
-        btnCancelar.setText("Cancelar");
-        btnCancelar.addActionListener(new java.awt.event.ActionListener() {
+        btnGuardar.setEnabled(false);
+        btnGuardar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCancelarActionPerformed(evt);
+                btnGuardarActionPerformed(evt);
+            }
+        });
+
+        btnCarrar.setText("Cerrar");
+        btnCarrar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCarrarActionPerformed(evt);
             }
         });
 
@@ -646,11 +835,11 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
                         .addComponent(btnAgregar)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnBorrar)
-                        .addGap(0, 29, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
-        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Módulos"));
+        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createEtchedBorder(), "Módulos"));
 
         tblModulos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -688,14 +877,14 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                .addComponent(jScrollPane2)
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 85, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -705,9 +894,9 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
 
         jLabel2.setText("Cupos:");
 
-        jLabel3.setText("jLabel3");
+        lblCantidadSecciones.setText("0");
 
-        jLabel4.setText("jLabel4");
+        lblCantidadCupos.setText("0");
 
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
         jPanel6.setLayout(jPanel6Layout);
@@ -715,27 +904,27 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 64, Short.MAX_VALUE)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel2))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel3))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lblCantidadCupos)
+                    .addComponent(lblCantidadSecciones))
+                .addContainerGap(85, Short.MAX_VALUE))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(jLabel3))
-                .addGap(18, 18, 18)
+                    .addComponent(lblCantidadSecciones))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(jLabel4))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(lblCantidadCupos))
+                .addContainerGap(92, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -745,57 +934,81 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnCancelar)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(btnGuardar))
-                    .addComponent(jPanel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(33, 33, 33)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
+                            .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(btnCarrar)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnGuardar)))
+                .addGap(12, 12, 12))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnGuardar)
-                    .addComponent(btnCancelar))
+                    .addComponent(btnCarrar))
                 .addGap(12, 12, 12))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
+    private void btnCarrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCarrarActionPerformed
+        /*
+        String title_;
+        String message;
+        int optionType;
+        int messageType;
+        int response;
+
+        response = JOptionPane.NO_OPTION;
+
+        if (hash != ofertasAcademicas.hashCode()) {
+            title_ = "Guardar cambios";
+            message = "¿Desea guardar los cambios realizados antes de cerrar?";
+            optionType = JOptionPane.YES_NO_CANCEL_OPTION;
+            messageType = JOptionPane.QUESTION_MESSAGE;
+            response = JOptionPane.showInternalConfirmDialog(this, message, title_, optionType, messageType);
+        }
+        
+
+        switch (response) {
+            case JOptionPane.YES_OPTION:
+                saveChanges();
+            case JOptionPane.NO_OPTION:
+                dispose();
+        }*/
+        if (hash != ofertasAcademicas.hashCode()) {            
+            saveChanges();
+        }
         dispose();
-    }//GEN-LAST:event_btnCancelarActionPerformed
+    }//GEN-LAST:event_btnCarrarActionPerformed
 
     private void cbxCarreraItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxCarreraItemStateChanged
-        if (cbxCarrera.getSelectedIndex() >= 0) {            
-            resolucion = queries.getResoluciones(((Item)cbxCarrera.getSelectedItem()).toString(),1).get(0);
+        if (cbxCarrera.getSelectedIndex() >= 0) {
+            resolucion = queries.getResoluciones(((Item) cbxCarrera.getSelectedItem()).toString(), 1).get(0);
         } else {
             resolucion = null;
         }
-        fillComboBoxNivel();        
+        fillComboBoxNivel();
+
     }//GEN-LAST:event_cbxCarreraItemStateChanged
 
     private void cbxPeriodoItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxPeriodoItemStateChanged
@@ -815,54 +1028,81 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_btnBorrarActionPerformed
 
     private void cbxMateriaItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxMateriaItemStateChanged
+        boolean isSelectedPeriodo;
+        boolean isSelectedCarrera;
+        boolean isSelectedNivel;
+        boolean isSelectedMateria;
+        boolean isSelectedSecciones;
         boolean enabled;
-        
+        /*Periodo periodo;
+        Carrera carrera;
+        Nivel nivel;
+        Unidad unidad;*/
+
         enabled = cbxMateria.getSelectedIndex() >= 0;
-        
-        if(!enabled){
-            cbxSecciones.setSelectedIndex(-1);            
-        }else{
-            if (cbxPeriodo.getSelectedIndex() >= 0 && cbxCarrera.getSelectedIndex() >= 0 && cbxNivel.getSelectedIndex() >= 0 && cbxMateria.getSelectedIndex() >= 0) {
-                ofertasAcademicas = queries.getOfertasAcademicas(
-                        ((Periodo) ((Item) cbxPeriodo.getModel().getSelectedItem()).getValue()).getId(),
-                        ((Carrera) ((Item) cbxCarrera.getModel().getSelectedItem()).getValue()).getId(),
-                        ((Nivel) ((Item) cbxNivel.getModel().getSelectedItem()).getValue()).getId(),
-                        ((Unidad) ((Item) cbxMateria.getModel().getSelectedItem()).getValue()).getId());
-                
-                if (ofertasAcademicas.size() > 0) {
-                    switch(ofertasAcademicas.get(0).getNomenclatura()){
-                        case ALFABETICO:
-                            cbxSecciones.setSelectedIndex(0);
-                            break;
-                        default:
-                            cbxSecciones.setSelectedIndex(1);
-                    }
-                    
-                    
-                    //cbxSecciones.setSelectedIndex(ofertasAcademicas.get(0).getNomenclatura());
-                    fillTableSecciones();
-                } else {
-                    cbxSecciones.setSelectedIndex(0);
-                }
-            }            
+
+        if (!enabled) {
+            cbxSecciones.setSelectedIndex(-1);
+            while (ofertasAcademicas.size() > 0) {
+                ofertasAcademicas.remove(ofertasAcademicas.size() - 1);
+            }
+        } else {
+            /*
+            periodo = (Periodo) ((Item) cbxPeriodo.getModel().getSelectedItem()).getValue();
+            carrera = (Carrera) ((Item) cbxCarrera.getModel().getSelectedItem()).getValue();
+            nivel = (Nivel) ((Item) cbxNivel.getModel().getSelectedItem()).getValue();
+            unidad = (Unidad) ((Item) cbxMateria.getModel().getSelectedItem()).getValue();
+            ofertasAcademicas = queries.getOfertasAcademicas(
+                    periodo.getId(),
+                    carrera.getId(),
+                    nivel.getId(),
+                    unidad.getId()
+            );*/
+            updateOfertasAcademicas();
+            hash = ofertasAcademicas.hashCode();
+
+            if (ofertasAcademicas.size() > 0) {
+                cbxSecciones.setSelectedIndex(ofertasAcademicas.get(0).getNomenclatura());
+            } else {
+                cbxSecciones.setSelectedIndex(-1);
+            }
         }
-        
-        //fillTableSecciones();
+
         cbxSecciones.setEnabled(enabled);
+
+        isSelectedPeriodo = cbxPeriodo.isEnabled() && cbxPeriodo.getSelectedIndex() >= 0;
+        isSelectedCarrera = cbxCarrera.isEnabled() && cbxCarrera.getSelectedIndex() >= 0;
+        isSelectedNivel = cbxNivel.isEnabled() && cbxNivel.getSelectedIndex() >= 0;
+        isSelectedMateria = cbxMateria.isEnabled() && cbxMateria.getSelectedIndex() >= 0;
+        isSelectedSecciones = cbxSecciones.isEnabled() && cbxSecciones.getSelectedIndex() >= 0;
+
+        if (isSelectedPeriodo && isSelectedCarrera && isSelectedNivel && isSelectedMateria && isSelectedSecciones) {
+            fillTableSecciones();
+        }
     }//GEN-LAST:event_cbxMateriaItemStateChanged
 
     private void cbxSeccionesItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxSeccionesItemStateChanged
+        boolean enabled;
+        enabled = cbxSecciones.isEnabled() && cbxSecciones.getSelectedIndex() >= 0;
+        btnAgregar.setEnabled(enabled);
         updateSecciones();
     }//GEN-LAST:event_cbxSeccionesItemStateChanged
 
-    private void cbxPeriodoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cbxPeriodoActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_cbxPeriodoActionPerformed
+    private void btnGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarActionPerformed
+        for (OfertaAcademica ofertaAcademica : ofertasAcademicas) {
+            System.out.println("Módulos");
+            ofertaAcademica.getModulos().forEach(modulo -> {
+                System.out.println("hashCode(): " + modulo.hashCode());
+            });
+        }
+
+        saveChanges();
+    }//GEN-LAST:event_btnGuardarActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregar;
     private javax.swing.JButton btnBorrar;
-    private javax.swing.JButton btnCancelar;
+    private javax.swing.JButton btnCarrar;
     private javax.swing.JButton btnGuardar;
     private javax.swing.JComboBox<String> cbxCarrera;
     private javax.swing.JComboBox<String> cbxMateria;
@@ -871,15 +1111,14 @@ public class IFrameOfertaAcademica extends javax.swing.JInternalFrame {
     private javax.swing.JComboBox<String> cbxSecciones;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JLabel lblCantidadCupos;
+    private javax.swing.JLabel lblCantidadSecciones;
     private javax.swing.JLabel lblCarrera;
     private javax.swing.JLabel lblMateria;
     private javax.swing.JLabel lblNivel;

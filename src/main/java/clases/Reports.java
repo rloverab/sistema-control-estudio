@@ -16,7 +16,6 @@
  */
 package clases;
 
-import java.sql.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -63,22 +62,18 @@ public class Reports {
     }
 
     public void generateReportPlanEstudio(
-            String carrera,
-            String nivel,
-            int resolucion,
-            int acta,
-            Date fecha) {
+            Integer carrera_id,
+            Integer nivel_id,
+            Integer resolucion_id) {
         String reportSource;
         Map<String, Object> params;
 
         reportSource = "./templates/plan_estudio.jrxml";
         params = new HashMap<>();
 
-        params.put("CARRERA", carrera);
-        params.put("NIVEL", nivel);
-        params.put("RESOLUCION", resolucion);
-        params.put("ACTA", acta);
-        params.put("FECHA", fecha);
+        params.put("CARRERA_ID", carrera_id);
+        params.put("NIVEL_ID", nivel_id);
+        params.put("RESOLUCION_ID", resolucion_id);
 
         generateReport(reportSource, params);
     }

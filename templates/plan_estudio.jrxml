@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.17.0.final using JasperReports Library version 6.17.0-6d93193241dd8cc42629e188b94f9e0bc5722efd  -->
+<!-- Created with Jaspersoft Studio version 6.18.1.final using JasperReports Library version 6.18.1-9d75d1969e774d4f179fb3be8401e98a0e6d1611  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="plan_estudio" pageWidth="612" pageHeight="936" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="66611474-b7f7-40b0-ac8d-0fe838e803c7">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="scedb"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
@@ -12,19 +12,15 @@
 	<property name="com.jaspersoft.studio.unit.rightMargin" value="inch"/>
 	<property name="com.jaspersoft.studio.unit.columnWidth" value="inch"/>
 	<property name="com.jaspersoft.studio.unit.columnSpacing" value="inch"/>
-	<parameter name="CARRERA" class="java.lang.String"/>
-	<parameter name="NIVEL" class="java.lang.String"/>
-	<parameter name="RESOLUCION" class="java.lang.Integer"/>
-	<parameter name="ACTA" class="java.lang.Integer"/>
-	<parameter name="FECHA" class="java.sql.Date"/>
+	<parameter name="CARRERA_ID" class="java.lang.Integer"/>
+	<parameter name="NIVEL_ID" class="java.lang.Integer"/>
+	<parameter name="RESOLUCION_ID" class="java.lang.Integer"/>
 	<queryString>
 		<![CDATA[CALL select_plan_estudio(
-	 $P{CARRERA} , 
-	 $P{NIVEL} , 
-	 $P{RESOLUCION} , 
-	 $P{ACTA} , 
-	 $P{FECHA} 
-)]]>
+	 $P{CARRERA_ID},	 
+	 $P{NIVEL_ID} , 
+	 $P{RESOLUCION_ID} 
+ )]]>
 	</queryString>
 	<field name="id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="id"/>
@@ -73,6 +69,10 @@
 		<property name="com.jaspersoft.studio.field.label" value="uc"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="planes_estudio"/>
 		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="prelaciones" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="prelaciones"/>
+		<property name="com.jaspersoft.studio.field.label" value="prelaciones"/>
 	</field>
 	<field name="resolucion_uc" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.name" value="resolucion"/>
@@ -459,7 +459,7 @@ COLEGIO UNIVERSITARIO DE REHABILITACIÓN "MAY HAMILTON"]]></text>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font fontName="Times New Roman" size="9" isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$P{NIVEL} == null ? "SUBTOTAL" : "TOTAL"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{NIVEL_ID} == null ? "SUBTOTAL" : "TOTAL"]]></textFieldExpression>
 				</textField>
 			</band>
 		</groupFooter>

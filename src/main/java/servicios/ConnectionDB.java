@@ -110,7 +110,7 @@ public final class ConnectionDB {
         
         try {
             cst = conn.prepareCall(query);
-
+            
             for (int i = 0; i < params.length; i++) {
 
                 if (params[i] != null) {
@@ -142,7 +142,7 @@ public final class ConnectionDB {
             }
             
             if (cst.execute()) {
-                status = Status.EXIST;
+                status = Status.EXIST;                
             } else {
                 status = Status.OK;
             }

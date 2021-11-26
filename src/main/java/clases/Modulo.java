@@ -16,6 +16,8 @@
  */
 package clases;
 
+import java.util.Objects;
+
 /**
  *
  * @author Roger Lovera <rloverab@yahoo.es>
@@ -25,23 +27,30 @@ public class Modulo implements Cloneable{
     private final String modulo;
     private final int hta;
     private final int htas;
-    private int docente_id;
+    protected Integer planesEstudioModulosId;
 
     public Modulo(int id, String modulo, int hta, int htas) {
-        this.id = id;
+        this.id = id;        
         this.modulo = modulo;
         this.hta = hta;
         this.htas = htas;   
-        docente_id = -1;
+        //docenteId = null;                
+        //planesEstudioModulosId = null;
+    }
+    
+    public Modulo(){
+        this(0, "", 0, 0);        
     }
 
-    public int getDocente_id() {
-        return docente_id;
+    /*
+    public Integer getDocenteId() {
+        return docenteId;
     }
 
-    public void setDocente_id(int docente_id) {
-        this.docente_id = docente_id;
+    public void setDocenteId(Integer docenteId) {
+        this.docenteId = docenteId;
     }
+    */
     
     public int getId() {
         return id;
@@ -58,16 +67,65 @@ public class Modulo implements Cloneable{
     public int getHTAS() {
         return htas;
     }
+    
+    public Integer getPlanesEstudioModulosId() {
+        return planesEstudioModulosId;
+    }
 
+    public void setPlanesEstudioModulosId(Integer planesEstudioSModuloId) {
+        this.planesEstudioModulosId = planesEstudioSModuloId;
+    }
+    
     @Override
     public String toString() {
         return modulo;
     }
-
+    
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }    
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + this.id;
+        hash = 31 * hash + Objects.hashCode(this.modulo);
+        hash = 31 * hash + this.hta;
+        hash = 31 * hash + this.htas;
+        hash = 31 * hash + Objects.hashCode(this.planesEstudioModulosId);
+        return hash;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Modulo other = (Modulo) obj;
+        if (this.id != other.id) {
+            return false;
+        }
+        if (this.hta != other.hta) {
+            return false;
+        }
+        if (this.htas != other.htas) {
+            return false;
+        }
+        if (!Objects.equals(this.modulo, other.modulo)) {
+            return false;
+        }
+        if (!Objects.equals(this.planesEstudioModulosId, other.planesEstudioModulosId)) {
+            return false;
+        }
+        return true;
+    }
+    
     
 }

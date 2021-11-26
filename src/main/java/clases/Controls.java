@@ -76,13 +76,26 @@ public final class Controls {
     public static void fillComboBoxItem(
             JComboBox comboBox,
             ArrayList<Item> arrayList,
+            String itemInicial,
+            int selectedIndex){
+        fillComboBoxItem(comboBox, arrayList, itemInicial);
+        if(selectedIndex >= -1 && selectedIndex < comboBox.getItemCount()){
+            comboBox.setSelectedIndex(selectedIndex);
+        }else{
+            comboBox.setSelectedIndex(-1);
+        }
+    }
+    
+    public static void fillComboBoxItem(
+            JComboBox comboBox,
+            ArrayList<Item> arrayList,
             String itemInicial){
         comboBox.removeAllItems();
 
         if (itemInicial != null) {
             comboBox.addItem(new Item(null,itemInicial));
         }
-
+        
         arrayList.forEach(e -> {
             comboBox.addItem(e);
         });
@@ -157,19 +170,13 @@ public final class Controls {
             origiModel.removeElement(item);
         }
     }
-
-    public static void fillTable(JTable table, String[] header, int[] widths, ArrayList<Object[]> rows) {
+    
+    public static void prepareTable(JTable table, String[] header, int[] widths){
         DefaultTableModel dtm;
 
-        dtm = new DefaultTableModel(header, 0);
-
-        if (rows != null) {
-            rows.forEach(e -> {
-                dtm.addRow(e);
-            });
-        }
-
-        table.setModel(dtm);
+        dtm = new DefaultTableModel(header, 0);                
+        
+        table.setModel(dtm);        
 
         for (int i = 0; i < widths.length; i++) {
             if (widths[i] >= 0) {
@@ -179,6 +186,36 @@ public final class Controls {
                 table.getTableHeader().getColumnModel().getColumn(i).setMinWidth(widths[i]);
             }
         }
+        
+        dtm.setNumRows(0);        
+    }
+
+    public static void fillTable(JTable table, ArrayList<Object[]> rows){
+        DefaultTableModel dtm;
+        
+        removeAllRowsTable(table);
+        
+        dtm = (DefaultTableModel) table.getModel();
+        
+        if (rows != null) {
+            rows.forEach(e -> {
+                dtm.addRow(e);
+            });
+        }
+    }
+    
+    public static void fillTable(JTable table, String[] header, int[] widths, ArrayList<Object[]> rows) {
+        DefaultTableModel dtm;        
+        
+        prepareTable(table, header, widths);
+        
+        dtm = (DefaultTableModel) table.getModel();
+        
+        if (rows != null) {
+            rows.forEach(e -> {
+                dtm.addRow(e);
+            });
+        }
     }
 
     public static void removeAllRowsTable(JTable table){
@@ -186,9 +223,11 @@ public final class Controls {
 
         dtm = (DefaultTableModel) table.getModel();
                
-        while(dtm.getRowCount() > 0){
+        /*while(dtm.getRowCount() > 0){
             dtm.removeRow(dtm.getRowCount() - 1);
         }
+        */
+        dtm.setNumRows(0);
     }
     
     public static boolean isValid(Object control, Verificar... verificar) {

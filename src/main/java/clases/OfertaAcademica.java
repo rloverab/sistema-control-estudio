@@ -17,52 +17,49 @@
 package clases;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Objects;
 
 /**
  *
  * @author Roger Lovera <rloverab@yahoo.es>
  */
 public class OfertaAcademica{
-    private int id;    
-    private int periodoId;
-    private int planEstudioModuloId;        
+    private int periodoId;          
     private int cupos;
-    private ArrayList<Modulo> modulos;
+    private ArrayList<OfertaAcademicaModulo> modulos;
     private int numeroSeccion;
-    private Nomenclatura nomenclatura;
-    public enum Nomenclatura{        
-        ALFABETICO,
-        NUMERICO
-    };
+    private int nomenclatura;    
+    public static final int ALFABETICO = 0;
+    public static final int NUMERICO = 1;
+    
 
     /**
      *
-     * @param id
      * @param periodoId
-     * @param planEstudioModuloId
      * @param cupos
      * @param modulos
      * @param numeroSeccion
      * @param nomenclatura
      */
-    public OfertaAcademica(int id, int periodoId, int planEstudioModuloId, int cupos, ArrayList<Modulo> modulos, int numeroSeccion, Nomenclatura nomenclatura) {
-        this.id = id;
+    public OfertaAcademica(
+            int periodoId, 
+            int cupos, 
+            ArrayList<OfertaAcademicaModulo> modulos, 
+            int numeroSeccion, 
+            int nomenclatura) {        
         this.periodoId = periodoId;
-        this.planEstudioModuloId = planEstudioModuloId;
         this.cupos = cupos;
         this.modulos = modulos;
         this.numeroSeccion = numeroSeccion;
         this.nomenclatura = nomenclatura;
-        
     }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    
+    public OfertaAcademica(){
+        periodoId = 0;
+        cupos = 1;
+        modulos = new ArrayList<>();
+        numeroSeccion = 0;
+        nomenclatura = 0;
     }
 
     public int getPeriodoId() {
@@ -73,14 +70,6 @@ public class OfertaAcademica{
         this.periodoId = periodo_id;
     }
 
-    public int getPlanEstudioModuloId() {
-        return planEstudioModuloId;
-    }
-
-    public void setPlanEstudioModuloId(int plan_estudio_modulo_id) {
-        this.planEstudioModuloId = plan_estudio_modulo_id;
-    }
-
     public int getCupos() {
         return cupos;
     }
@@ -89,11 +78,11 @@ public class OfertaAcademica{
         this.cupos = cupos;
     }
 
-    public ArrayList<Modulo> getModulos() {
+    public ArrayList<OfertaAcademicaModulo> getModulos() {
         return modulos;
     }
 
-    public void setModulos(ArrayList<Modulo> modulos) {
+    public void setModulos(ArrayList<OfertaAcademicaModulo> modulos) {
         this.modulos = modulos;
     }
 
@@ -105,11 +94,11 @@ public class OfertaAcademica{
         this.numeroSeccion = numeroSeccion;
     }
 
-    public Nomenclatura getNomenclatura() {
+    public int getNomenclatura() {
         return nomenclatura;
     }
 
-    public void setNomenclatura(Nomenclatura nomenclatura) {
+    public void setNomenclatura(int nomenclatura) {
         this.nomenclatura = nomenclatura;        
     }
     
@@ -133,7 +122,52 @@ public class OfertaAcademica{
             case NUMERICO:
                 seccion =  String.format("%d", numeroSeccion + 1);     
         }
-        System.out.println(seccion);
+        
         return seccion;
-    }    
+    }        
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 37 * hash + this.periodoId;
+        hash = 37 * hash + this.cupos;
+        hash = 37 * hash + Objects.hashCode(this.modulos);
+        hash = 37 * hash + this.numeroSeccion;
+        hash = 37 * hash + this.nomenclatura;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final OfertaAcademica other = (OfertaAcademica) obj;
+        if (this.periodoId != other.periodoId) {
+            return false;
+        }
+        if (this.cupos != other.cupos) {
+            return false;
+        }
+        if (this.numeroSeccion != other.numeroSeccion) {
+            return false;
+        }
+        if (this.nomenclatura != other.nomenclatura) {
+            return false;
+        }
+        if (!Objects.equals(this.modulos, other.modulos)) {
+            return false;
+        }
+        return true;
+    }
+
+    
+    
+    
 }

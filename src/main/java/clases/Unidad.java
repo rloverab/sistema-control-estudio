@@ -25,18 +25,22 @@ import java.util.ArrayList;
 public class Unidad {
     private int id;
     private String codigo;
-    private String unidad;
-    private int hta;
-    private int htas;
+    private String unidad;    
+    //private int hta;
+    //private int htas;    
     private int uc;
     private final ArrayList<Modulo> modulos;
 
-    public Unidad(int id, String codigo, String unidad, int hta, int htas, int uc) {
+    public Unidad(
+            int id, 
+            String codigo, 
+            String unidad/*, int hta, int htas*/, 
+            int uc) {
         this.id = id;
         this.codigo = codigo;
         this.unidad = unidad;
-        this.hta = hta;
-        this.htas = htas;
+        //this.hta = hta;
+        //this.htas = htas;
         this.uc = uc;
         modulos = new ArrayList<>();
     }
@@ -52,15 +56,16 @@ public class Unidad {
     public void setUnidad(String unidad) {
         this.unidad = unidad;
     }
-
+    /*
     public void setHTA(int hta) {
         this.hta = hta;
     }
-
+    */
+    /*
     public void setHTAS(int htas) {
         this.htas = htas;
     }
-
+    */
     public void setUC(int uc) {
         this.uc = uc;
     }
@@ -78,11 +83,25 @@ public class Unidad {
     }
 
     public int getHTA() {
-        return hta;
+        int _hta;
+        _hta = 0;
+        
+        for(Modulo modulo : modulos){
+            _hta += modulo.getHTA();
+        }
+        
+        return _hta;
     }
 
     public int getHTAS() {
-        return htas;
+        int _htas;
+        _htas = 0;
+        
+        for(Modulo modulo : modulos){
+            _htas += modulo.getHTAS();
+        }
+        
+        return _htas;
     }
 
     public int getUC() {

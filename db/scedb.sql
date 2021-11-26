@@ -5,7 +5,7 @@ Sistema de Control de Estudios del CUR May Hamilton
 Autor: Roger Lovera <rloverab@yahoo.es>
 
 Creado: 09/02/2021
-Actualizado: 03/11/2021
+Actualizado: 25/11/2021
 **************************************************/
 
 # Borrar base de datos "scedb" (sólo si existe)
@@ -320,13 +320,13 @@ CREATE TABLE IF NOT EXISTS prelaciones (
     
 # Crear tabla "ofertas_academicas"
 CREATE TABLE IF NOT EXISTS ofertas_academicas (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,    
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    plan_estudio_modulo_id INT UNSIGNED NOT NULL,   
     docente_id INT UNSIGNED NULL DEFAULT NULL,
-    periodo_id INT UNSIGNED NOT NULL,
-    plan_estudio_modulo_id INT UNSIGNED NOT NULL,        
+    periodo_id INT UNSIGNED NOT NULL,         
     cupos SMALLINT UNSIGNED NOT NULL,
-    id_seccion SMALLINT UNSIGNED NOT NULL,
-    id_nomenclatura SMALLINT UNSIGNED NOT NULL,
+    numero_seccion SMALLINT UNSIGNED NOT NULL,
+    nomenclatura SMALLINT UNSIGNED NOT NULL,
     creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),    
@@ -835,37 +835,11 @@ DELIMITER ;
 # Crear procedimiento almacenado "select_plan_estudio"
 DROP procedure IF EXISTS select_plan_estudio;
 DELIMITER $$
-/*
-CREATE PROCEDURE select_plan_estudio (
-                    carrera VARCHAR(45), 
-                    nivel VARCHAR(50),
-                    resolucion SMALLINT,
-                    acta SMALLINT,
-                    fecha DATE)
-*/
 CREATE PROCEDURE select_plan_estudio (
                     carrera_id INT UNSIGNED, 
                     nivel_id INT UNSIGNED,
                     resolucion_id INT UNSIGNED)
-BEGIN
-	DECLARE resolucion_id_last INT UNSIGNED DEFAULT NULL;
-
-	IF resolucion_id IS NULL THEN
-		SELECT 		planes_estudio.resolucion_id INTO resolucion_id_last
-		FROM 		planes_estudio,
-					resoluciones			
-		WHERE 		planes_estudio.resolucion_id = resoluciones.id 
-		AND			planes_estudio.carrera_id = carrera_id
-		AND			planes_estudio.nivel_id = nivel_id		
-		AND			CASE WHEN resolucion_id IS NOT NULL THEN
-						planes_estudio.resolucion_id = resolucion_id
-					ELSE 
-						planes_estudio IS NOT NULL
-					END
-		ORDER BY	resoluciones.fecha DESC
-		LIMIT 1;
-	END IF;
-	
+BEGIN	
     SELECT      planes_estudio.id, 
                 carreras.carrera, 
                 unidades.codigo, 
@@ -899,85 +873,24 @@ BEGIN
     AND         planes_estudio.nivel_id = view_modulos_ultimas_resoluciones.nivel_id 
     AND         planes_estudio.unidad_id = view_modulos_ultimas_resoluciones.unidad_id
     AND         planes_estudio.resolucion_id = resoluciones.id
-    AND         CASE 
-    				WHEN carrera_id IS NOT NULL THEN planes_estudio.carrera_id = carrera_id
-	                ELSE planes_estudio.carrera_id IS NOT NULL
+    AND         CASE WHEN carrera_id IS NOT NULL THEN 
+    				planes_estudio.carrera_id = carrera_id
+	            ELSE 
+	            	planes_estudio.carrera_id IS NOT NULL
                 END
-    AND         CASE 
-    				WHEN nivel_id IS NOT NULL THEN planes_estudio.nivel_id = nivel_id
-	                ELSE planes_estudio.nivel_id IS NOT NULL
+    AND         CASE WHEN 
+    				nivel_id IS NOT NULL THEN planes_estudio.nivel_id = nivel_id
+            	ELSE 
+            		planes_estudio.nivel_id IS NOT NULL
                 END
-    AND         CASE 
-	    			WHEN resolucion_id IS NOT NULL THEN planes_estudio.resolucion_id = resolucion_id
-	                WHEN resolucion_id IS NULL AND carrera_id IS NOT NULL THEN planes_estudio.resolucion_id = resolucion_id_last
-	            	ELSE planes_estudio.resolucion_id IS NOT NULL
+    AND         CASE WHEN resolucion_id IS NOT NULL THEN 
+    				planes_estudio.resolucion_id = resolucion_id	                
+	            ELSE 
+	            	planes_estudio.resolucion_id IS NOT NULL
             	END    			
     GROUP BY    carreras.carrera, 
             	niveles.orden, 
-            	unidades.codigo;
-	/*
-	SELECT      planes_estudio.id, 
-                carreras.carrera, 
-                unidades.codigo, 
-                unidades.unidad, 
-                niveles.nivel,
-                IF( planes_estudio.grado_id IS NOT NULL, 
-                    get_grado(planes_estudio.grado_id),
-                    NULL) AS grado,
-                SUM(planes_estudio_modulos.htas) AS htas,
-                SUM(planes_estudio_modulos.hta) AS hta,
-                planes_estudio.uc,
-                get_prelaciones(planes_estudio.id) AS prelaciones,
-                resoluciones.resolucion AS resolucion_uc,
-                resoluciones.acta AS acta_uc,
-                resoluciones.fecha AS fecha_uc,
-                view_modulos_ultimas_resoluciones.resolucion AS resolucion_m,
-                view_modulos_ultimas_resoluciones.acta AS acta_m,
-                view_modulos_ultimas_resoluciones.fecha AS fecha_m
-    FROM        carreras,
-                unidades, 
-                niveles, 
-                planes_estudio,
-                planes_estudio_modulos,
-                view_modulos_ultimas_resoluciones,
-                resoluciones
-    WHERE       planes_estudio.carrera_id = carreras.id
-    AND         planes_estudio.nivel_id = niveles.id
-    AND         planes_estudio.unidad_id = unidades.id
-    AND         planes_estudio.id = planes_estudio_modulos.plan_estudio_id
-    AND         planes_estudio.carrera_id = view_modulos_ultimas_resoluciones.carrera_id 
-    AND         planes_estudio.nivel_id = view_modulos_ultimas_resoluciones.nivel_id 
-    AND         planes_estudio.unidad_id = view_modulos_ultimas_resoluciones.unidad_id
-    AND         planes_estudio.resolucion_id = resoluciones.id
-    AND         CASE WHEN carrera IS NOT NULL THEN
-                    carreras.carrera = carrera
-                ELSE
-                    carreras.carrera IS NOT NULL
-                END
-    AND         CASE WHEN nivel IS NOT NULL THEN
-                    niveles.nivel = nivel
-                ELSE 
-                    niveles.nivel IS NOT NULL
-                END
-    AND         CASE WHEN resolucion IS NOT NULL THEN
-                    resoluciones.resolucion = resolucion
-            	ELSE 
-                    resoluciones.resolucion IS NOT NULL
-            	END 
-    AND         CASE WHEN acta IS NOT NULL THEN
-                    resoluciones.acta = acta
-            	ELSE 
-                    resoluciones.acta IS NOT NULL
-            	END 
-    AND         CASE WHEN fecha IS NOT NULL THEN
-                    resoluciones.fecha = fecha
-                ELSE 
-                    resoluciones.fecha IS NOT NULL
-                END    			
-    GROUP BY    carreras.carrera, 
-            	niveles.orden, 
-            	unidades.codigo;
-	*/
+            	unidades.codigo;	
 END$$
 DELIMITER ;
 
@@ -996,6 +909,7 @@ BEGIN
     LIMIT 1;
 
     SELECT      planes_estudio_modulos.id,
+    			modulos.id AS modulo_id,
                 modulos.modulo,
                 planes_estudio_modulos.hta / planes_estudio_modulos.htas AS semanas,
                 planes_estudio_modulos.htas,
@@ -1066,29 +980,9 @@ DELIMITER ;
 DROP procedure IF EXISTS select_planes_estudio_niveles;
 DELIMITER $$
 CREATE PROCEDURE select_planes_estudio_niveles (
-                    carrera VARCHAR(45), 
-                    resolucion SMALLINT,
-                    acta SMALLINT,
-                    fecha DATE)
-BEGIN
-	/*
-	SELECT      tabla.nivel 
-    FROM        (
-                SELECT  DISTINCT(niveles.nivel), 
-                        niveles.orden
-                FROM    planes_estudio,
-                        carreras,
-                        niveles,
-                        resoluciones
-                WHERE   planes_estudio.carrera_id = carreras.id
-                AND     planes_estudio.nivel_id = niveles.id
-                AND     planes_estudio.resolucion_id = resoluciones.id 
-                AND     carreras.carrera = carrera
-                AND     resoluciones.resolucion = resolucion
-                AND     resoluciones.acta = acta
-                AND     resoluciones.fecha = fecha) AS tabla
-    ORDER BY    orden ASC;
-    */
+                    carrera_id INT UNSIGNED, 
+                    resolucion_id INT UNSIGNED)
+BEGIN	
 	SELECT      niveles.id,
 				niveles.nivel,
 				niveles.orden 
@@ -1097,16 +991,10 @@ BEGIN
 	            SELECT  DISTINCT(niveles.nivel),                 		
 	                    niveles.orden
 	            FROM    planes_estudio,
-	                    carreras,
-	                    niveles,
-	                    resoluciones
-	            WHERE   planes_estudio.carrera_id = carreras.id
-	            AND     planes_estudio.nivel_id = niveles.id
-	            AND     planes_estudio.resolucion_id = resoluciones.id            
-	            AND     carreras.carrera = carrera
-	            AND     resoluciones.resolucion = resolucion
-	            AND     resoluciones.acta = acta
-	            AND     resoluciones.fecha = fecha            
+	                    niveles
+	            WHERE   planes_estudio.carrera_id = carrera_id
+	            AND     planes_estudio.resolucion_id = resolucion_id
+	            AND     planes_estudio.nivel_id = niveles.id            
 	            ) AS tabla ON tabla.nivel = niveles.nivel
 	
 	ORDER BY    tabla.orden ASC;
@@ -1936,19 +1824,85 @@ BEGIN
 			ofertas_academicas.docente_id,
 			ofertas_academicas.periodo_id,
 			ofertas_academicas.plan_estudio_modulo_id,			
-			get_seccion(ofertas_academicas.id_seccion, ofertas_academicas.id_nomenclatura) AS seccion,
+			get_seccion(ofertas_academicas.numero_seccion, ofertas_academicas.nomenclatura) AS seccion,
 			ofertas_academicas.cupos,
-			ofertas_academicas.id_seccion,
-			ofertas_academicas.id_nomenclatura
+			ofertas_academicas.numero_seccion,
+			ofertas_academicas.nomenclatura,
+			modulos.id AS modulo_id,
+			modulos.modulo,
+			planes_estudio_modulos.hta,
+			planes_estudio_modulos.htas
 	FROM 	ofertas_academicas,
 			planes_estudio_modulos,
-			planes_estudio
+			planes_estudio,
+			modulos
 	WHERE	ofertas_academicas.plan_estudio_modulo_id = planes_estudio_modulos.id 
 	AND 	planes_estudio_modulos.plan_estudio_id = planes_estudio.id
 	AND		ofertas_academicas.periodo_id = periodo_id 
 	AND		planes_estudio.carrera_id = carrera_id
 	AND		planes_estudio.nivel_id = nivel_id
-	AND		planes_estudio.unidad_id = unidad_id;
+	AND		planes_estudio.unidad_id = unidad_id
+	AND		plan_estudio_modulo_id = modulos.id
+	ORDER BY 	ofertas_academicas.numero_seccion ASC,
+				modulos.modulo ASC;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "update_ofertas_academicas_modulos"
+DROP procedure IF EXISTS update_ofertas_academicas_modulos;
+DELIMITER $$
+CREATE PROCEDURE update_ofertas_academicas_modulos (
+					id INT UNSIGNED,
+					docente_id INT,
+					cupos INT UNSIGNED,
+					numero_seccion INT UNSIGNED,
+					nomenclatura INT UNSIGNED)
+BEGIN
+    UPDATE 	ofertas_academicas 
+    SET		ofertas_academicas.docente_id = IF(docente_id > 0, docente_id, NULL),
+    		ofertas_academicas.cupos = cupos,
+    		ofertas_academicas.numero_seccion = numero_seccion,
+    		ofertas_academicas.nomenclatura = nomenclatura 
+	WHERE	ofertas_academicas.id = id;
+END$$
+DELIMITER ;
+
+# Crear procedimiento almacenado "insert_oferta_academica"
+DROP procedure IF EXISTS insert_oferta_academica;
+DELIMITER $$
+CREATE PROCEDURE insert_oferta_academica (
+					plan_estudio_modulo_id INT UNSIGNED, 
+					docente_id INT,
+					periodo_id INT UNSIGNED,
+					cupos SMALLINT UNSIGNED,
+					numero_seccion SMALLINT UNSIGNED,
+					nomenclatura SMALLINT UNSIGNED)
+BEGIN
+	DECLARE id INT UNSIGNED DEFAULT NULL;	
+
+	SELECT 	ofertas_academicas.id INTO id
+	FROM	ofertas_academicas
+	WHERE 	ofertas_academicas.plan_estudio_modulo_id = plan_estudio_modulo_id
+	AND 	ofertas_academicas.periodo_id = periodo_id
+	AND 	ofertas_academicas.cupos = cupos
+	AND 	ofertas_academicas.numero_seccion = numero_seccion;	
+
+	IF id IS NULL THEN
+		INSERT INTO ofertas_academicas(
+	    					plan_estudio_modulo_id,
+							docente_id, 
+	    					periodo_id, 
+	    					cupos, 
+	    					numero_seccion, 
+	    					nomenclatura)
+	    VALUES(
+	    					plan_estudio_modulo_id,
+					    	IF(docente_id > 0, docente_id, null),
+					    	periodo_id,
+					    	cupos, 
+					    	numero_seccion, 
+					    	nomenclatura);
+	END IF;        
 END$$
 DELIMITER ;
 

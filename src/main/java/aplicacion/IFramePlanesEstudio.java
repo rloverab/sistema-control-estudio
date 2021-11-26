@@ -20,8 +20,10 @@ import clases.Carrera;
 import clases.Queries;
 import clases.Controls;
 import clases.Item;
+import clases.Nivel;
 import clases.Reports;
 import clases.Resolucion;
+import clases.Unidad;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -33,25 +35,23 @@ import javax.swing.table.DefaultTableModel;
 public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
     private final Queries queries;
     private final Reports reports;
-    private ArrayList<Resolucion> resoluciones;    
 
     /**
      * Creates new form PlanesEstudio
      *
-     * @param consultas
-     * @param reportes
+     * @param queries
+     * @param reports
      */    
     public IFramePlanesEstudio(
-            Queries consultas, 
-            Reports reportes) {
+            Queries queries, 
+            Reports reports) {
         initComponents();
-        resoluciones = null;
-        this.queries = consultas;
-        this.reports = reportes;
+        this.queries = queries;
+        this.reports = reports;
 
-        if (consultas != null) {
+        if (queries != null) {
             fillComboBoxCarreras();
-            fillTablePlanEstudio();
+            prepareTablePlanEstudio();
         }else{
             JOptionPane.showMessageDialog(
                     this.rootPane, 
@@ -81,64 +81,82 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
     }
 
     private void fillComboBoxResoluciones() {
-        cbxAprobaciones.removeAllItems();
-        cbxAprobaciones.addItem("Seleccione...");
-
-        resoluciones = queries.getResoluciones(cbxCarreras.getSelectedItem().toString());
-
-        resoluciones.forEach(e -> {
-            cbxAprobaciones.addItem(e.toString());
-        });
+        ArrayList<Resolucion> resoluciones;
+        ArrayList<Item> items;
+        Carrera carrera;
+        
+        cbxResoluciones.removeAllItems();
+        
+        carrera = (Carrera) ((Item) cbxCarreras.getSelectedItem()).getValue();
+        items = new ArrayList<>();
+        resoluciones = queries.getResoluciones(carrera.getCarrera());
+        
+        resoluciones.forEach(resolucion -> items.add(new Item(resolucion)));
+        
+        Controls.fillComboBoxItem(
+                cbxResoluciones, 
+                items, 
+                "Seleccione...");        
     }
 
-    private void fillComboBoxNiveles() {        
-        int index;
-        index = cbxAprobaciones.getSelectedIndex() - 1;
-        ArrayList<String> niveles;
+    private void fillComboBoxNiveles() {
+        ArrayList<Item> items;
+        ArrayList<Nivel> niveles;
+        Carrera carrera;
+        Resolucion resolucion;
         
+        items = new ArrayList<>();
+        carrera = (Carrera) ((Item)cbxCarreras.getSelectedItem()).getValue();
+        resolucion = (Resolucion) ((Item)cbxResoluciones.getSelectedItem()).getValue();                
+        niveles = queries.getNiveles(carrera.getId(), resolucion.getId());
+        niveles.forEach(nivel -> items.add(new Item(nivel)));
+        Controls.fillComboBoxItem(cbxNiveles, items, "Todos");
+    }
+    
+    private void prepareTablePlanEstudio(){        
+        int[] widths = {0, 140, -1, 40, 50, 40};        
+        String[] header = {"id", "Código", "Unidad", "HTA", "HTAS", "UC"};
         
-        
-        
-
-        if (index >= 0) {
-            niveles = new ArrayList<>();
-            queries.getNiveles(cbxCarreras.getSelectedItem().toString(),
-                            resoluciones.get(index).getResolucion(),
-                            resoluciones.get(index).getActa(),
-                            resoluciones.get(index).getFecha()).forEach(nivel -> {
-                                niveles.add(nivel.getNivel());
-                            });
-            Controls.fillComboBoxString(
-                    cbxNiveles,
-                    niveles,
-                    "Todos");            
-        }
-
+        Controls.prepareTable(tblPlanEstudio, header, widths);        
     }
 
     private void fillTablePlanEstudio() {        
-        String[] header = {"id", "Código", "Unidad", "HTA", "HTAS", "UC"};        
-        int[] widths = {0, 140, -1, 40, 50, 40};
-        int index;
-        ArrayList<Object[]> rows;        
+        ArrayList<Object[]> rows;    
+        ArrayList<Unidad> unidades;
+        Carrera carrera;
+        Resolucion resolucion;
+        Nivel nivel;
+        Integer carrera_id;
+        Integer resolucion_id;
+        Integer nivel_id;
         
-        index = cbxAprobaciones.getSelectedIndex() - 1;
-        rows = null;
+        rows = new ArrayList<>();
         
-        if(cbxNiveles.getSelectedIndex() >= 0){            
-            rows = queries.getPlanEstudio(
-                    cbxCarreras.getSelectedItem().toString(),
-                    cbxNiveles.getSelectedIndex() > 0 ? cbxNiveles.getSelectedItem().toString() : null,
-                    resoluciones.get(index).getResolucion(),
-                    resoluciones.get(index).getActa(),
-                    resoluciones.get(index).getFecha());            
-        }
+        carrera = (Carrera) ((Item)cbxCarreras.getSelectedItem()).getValue();
+        resolucion = (Resolucion) ((Item)cbxResoluciones.getSelectedItem()).getValue();
+        nivel = (Nivel) ((Item)cbxNiveles.getSelectedItem()).getValue();
         
-        Controls.fillTable(
-                tblPlanEstudio, 
-                header, 
-                widths, 
-                rows);
+        carrera_id = carrera != null ? carrera.getId() : null;
+        resolucion_id = resolucion != null ? resolucion.getId() : null;
+        nivel_id = nivel != null ? nivel.getId() : null;
+            
+        unidades = queries.getPlanEstudio(
+                carrera_id, 
+                nivel_id, 
+                resolucion_id);
+
+        unidades.forEach(unidad -> {
+            rows.add(new Object[]{
+                unidad.getId(),
+                unidad.getCodigo(),
+                unidad.getUnidad(),
+                unidad.getHTA(),
+                unidad.getHTAS(),
+                unidad.getUC()
+            });
+        });
+        
+        Controls.fillTable(tblPlanEstudio, rows);
     }
 
     private void showPlanEstudio() {
@@ -146,21 +164,26 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         btnMostrar.setEnabled(false);
     }
 
-    private void exportPlanEstudio() {
-        String carrera;
-        String nivel;
-        int index;
-
-        carrera = cbxCarreras.getSelectedItem().toString();
-        nivel = cbxNiveles.getSelectedIndex() > 0 ? cbxNiveles.getSelectedItem().toString() : null;
-        index = cbxAprobaciones.getSelectedIndex() - 1;
+    private void exportPlanEstudio() {        
+        Carrera carrera;
+        Nivel nivel;
+        Resolucion resolucion;
+        Integer carrera_id;
+        Integer nivel_id;
+        Integer resolucion_id;
+        
+        carrera = (Carrera) ((Item)cbxCarreras.getSelectedItem()).getValue();
+        nivel = (Nivel) ((Item)cbxNiveles.getSelectedItem()).getValue();
+        resolucion = (Resolucion) ((Item)cbxResoluciones.getSelectedItem()).getValue();
+        
+        carrera_id = carrera != null ? carrera.getId() : null;
+        nivel_id = nivel != null ? nivel.getId() : null;
+        resolucion_id = resolucion != null ? resolucion.getId() : null;
         
         reports.generateReportPlanEstudio(
-                carrera, 
-                nivel, 
-                resoluciones.get(index).getResolucion(), 
-                resoluciones.get(index).getActa(), 
-                resoluciones.get(index).getFecha());        
+                carrera_id, 
+                nivel_id, 
+                resolucion_id);        
     }
 
     /**
@@ -176,7 +199,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         cbxCarreras = new javax.swing.JComboBox<>();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
-        cbxAprobaciones = new javax.swing.JComboBox<>();
+        cbxResoluciones = new javax.swing.JComboBox<>();
         btnMostrar = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
         cbxNiveles = new javax.swing.JComboBox<>();
@@ -201,10 +224,10 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
 
         jLabel2.setText("Aprobación");
 
-        cbxAprobaciones.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        cbxAprobaciones.addItemListener(new java.awt.event.ItemListener() {
+        cbxResoluciones.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cbxResoluciones.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                cbxAprobacionesItemStateChanged(evt);
+                cbxResolucionesItemStateChanged(evt);
             }
         });
 
@@ -259,7 +282,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(cbxNiveles, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(cbxCarreras, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(cbxAprobaciones, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(cbxResoluciones, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnExportar, javax.swing.GroupLayout.PREFERRED_SIZE, 82, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -276,7 +299,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
-                    .addComponent(cbxAprobaciones, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbxResoluciones, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnMostrar))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -324,18 +347,18 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
 
     private void cbxCarrerasItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxCarrerasItemStateChanged
         if (cbxCarreras.getSelectedIndex() <= 0) {
-            cbxAprobaciones.removeAllItems();
-            cbxAprobaciones.setEnabled(false);
+            cbxResoluciones.removeAllItems();
+            cbxResoluciones.setEnabled(false);
         } else {
             fillComboBoxResoluciones();
-            cbxAprobaciones.setEnabled(true);
+            cbxResoluciones.setEnabled(true);
         }
     }//GEN-LAST:event_cbxCarrerasItemStateChanged
 
-    private void cbxAprobacionesItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxAprobacionesItemStateChanged
+    private void cbxResolucionesItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbxResolucionesItemStateChanged
         boolean enabled;
 
-        enabled = cbxAprobaciones.getSelectedIndex() > 0;
+        enabled = cbxResoluciones.getSelectedIndex() > 0;
         btnMostrar.setEnabled(enabled);
         btnExportar.setEnabled(enabled);        
 
@@ -346,7 +369,7 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
         }
 
         cbxNiveles.setEnabled(enabled);
-    }//GEN-LAST:event_cbxAprobacionesItemStateChanged
+    }//GEN-LAST:event_cbxResolucionesItemStateChanged
 
     private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
         this.dispose();
@@ -377,9 +400,9 @@ public class IFramePlanesEstudio extends javax.swing.JInternalFrame {
     private javax.swing.JButton btnCerrar;
     private javax.swing.JButton btnExportar;
     private javax.swing.JButton btnMostrar;
-    private javax.swing.JComboBox<String> cbxAprobaciones;
     private javax.swing.JComboBox<String> cbxCarreras;
     private javax.swing.JComboBox<String> cbxNiveles;
+    private javax.swing.JComboBox<String> cbxResoluciones;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
